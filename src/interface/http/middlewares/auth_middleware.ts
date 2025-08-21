@@ -3,7 +3,16 @@ import { StatusCodes } from 'http-status-codes';
 import jwt from 'jsonwebtoken';
 import AppError from '../../../shared/errors/app_errors';
 
-// Extend the Request interface to include the 'user' property
+
+// Define the shape of the JWT payload
+interface JwtPayload {
+  id: string;
+  role: string;
+  permissions: string[];
+  // Add more fields if needed
+}
+
+// Extend the Request interface
 declare global {
   namespace Express {
     interface Request {
@@ -12,33 +21,35 @@ declare global {
   }
 }
 
-interface JwtPayload {
-  id: string;
-  email: string;
-  role: string;
-  // add more fields as needed
-}
+const secret = process.env.JWT_SECRET || 'jwt_secret';
 
+// Higher-order middleware to accept roles
+export const authenticate =
+  (allowedRoles: string[] = []) =>
+  (req: Request, res: Response, next: NextFunction) => {
+    const authHeader = req.headers.authorization;
 
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return next(
+        new AppError(StatusCodes.UNAUTHORIZED, 'Authorization header missing or malformed')
+      );
+    }
 
-export const authenticate = (req: Request, res: Response, next: NextFunction) => {
-  const authHeader = req.headers.authorization;
+    const token = authHeader.split(' ')[1];
 
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    throw new AppError(StatusCodes.UNAUTHORIZED, "Authorization header missing or malformed");
-  }
+    try {
+      const decoded = jwt.verify(token, secret) as JwtPayload;
+      req.user = decoded;
 
-  const token = authHeader.split(' ')[1];
+      // If specific roles are required, check them
+      if (allowedRoles.length > 0) {
+        if (!decoded.role || !allowedRoles.includes(decoded.role)) {
+          return next(new AppError(StatusCodes.FORBIDDEN, 'Access denied: insufficient role'));
+        }
+      }
 
-
-  const secret = process.env.JWT_SECRET || 'secret'; // ensure you load from .env
-
-  try {
-    const decoded = jwt.verify(token, secret) as JwtPayload;
-    req.user = decoded; // Extend Request type to fix TS error
-    // console.log(req.user);
-    next();
-  } catch (err) {
-    next(err);
-  }
-};
+      next();
+    } catch (err) {
+      next(new AppError(StatusCodes.UNAUTHORIZED, 'Invalid or expired token'));
+    }
+  };
