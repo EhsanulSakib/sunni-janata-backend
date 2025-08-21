@@ -7,14 +7,14 @@ export interface ILocation {
   parentLevel: mongoose.Schema.Types.ObjectId | null;
 }
 
-export interface ILocationDocument extends mongoose.Document {
+export interface ILocationDocument extends ILocation, mongoose.Document {
   createdAt: Date;
   updatedAt: Date;
 }
 
 export interface ILocationModel extends mongoose.Model<ILocationDocument> {}
 
-const locationSchema = new mongoose.Schema(
+const locationSchema = new mongoose.Schema<ILocationDocument>(
   {
     title: {
       type: String,
