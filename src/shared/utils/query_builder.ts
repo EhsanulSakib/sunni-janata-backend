@@ -15,62 +15,10 @@ export class QueryBuilder<T> {
     this.modelQuery = this.model.find();
   }
 
-  // ! project specific
-  filterPrice() {
-    const maxPrice = this.query?.max_price as number;
-    const minPrice = this.query?.min_price as number;
-    const priceFilter: Record<string, unknown> = {};
-
-    if (!this.useAggregate) {
-      if (maxPrice != undefined && minPrice != undefined) {
-        priceFilter["$gte"] = minPrice;
-        priceFilter["$lte"] = maxPrice;
-      } else if (minPrice !== undefined) {
-        priceFilter["$gte"] = minPrice;
-      } else if (maxPrice !== undefined) {
-        priceFilter["$lte"] = maxPrice;
-      }
-
-      if (Object.keys(priceFilter).length > 0) {
-        this.modelQuery = this.model.find({ price: priceFilter });
-      }
-    }
-
-    return this;
-  }
-  // ! project specific
-  filterColor() {
-    const colorsQuery = this.query.colors as string;
-    if (colorsQuery == undefined) return this;
-    const colors = colorsQuery.split(",");
-    if (colors.length == 0) return this;
-    if (!this.useAggregate) {
-      this.modelQuery = this.model.find({
-        variations: {
-          $elemMatch: { attribute: "Color", value: { $in: colors } },
-        },
-      });
-    }
-    return this;
-  }
-
-  // ! project specific
-  filterSize() {
-    const sizesQuery = this.query?.sizes as string;
-    if (sizesQuery == undefined) return this;
-    const sizes = sizesQuery.split(",");
-    if (!this.useAggregate) {
-      this.modelQuery = this.model.find({
-        variations: {
-          $elemMatch: { attribute: "Size", value: { $in: sizes } },
-        },
-      });
-    }
-    return this;
-  }
-
   search(searchableFields: string[], isObjectId = false) {
     const searchTerm = this.query?.searchTerm as string;
+    console.log(searchTerm);
+
     if (searchTerm) {
       const conditions: FilterQuery<T>[] = searchableFields.map((field) => ({
         [field]: { $regex: searchTerm, $options: "i" },
@@ -81,7 +29,10 @@ export class QueryBuilder<T> {
           $match: { $or: conditions },
         });
       } else {
-        this.modelQuery = this.model.find({ $or: conditions });
+        this.modelQuery = this.modelQuery.find({
+          ...this.modelQuery.getFilter(),
+          $or: conditions,
+        });
       }
     }
 
@@ -91,7 +42,23 @@ export class QueryBuilder<T> {
   find(condition: Record<string, unknown>) {
     if (this.useAggregate)
       throw new AppError(StatusCodes.BAD_REQUEST, "Not Aggregation Query");
+
     this.modelQuery = this.model.find(condition);
+
+    return this;
+  }
+
+  selectField(fields: string) {
+    // 📌 exp -> "name email avatar";
+    if (this.useAggregate) {
+      const projectStage: { [key: string]: number } = {};
+      fields.split(" ").forEach((field) => {
+        projectStage[field] = 1;
+      });
+      this.aggregatePipeline.push({ $project: projectStage });
+    } else {
+      this.modelQuery = this.modelQuery.select(fields);
+    }
     return this;
   }
 
@@ -109,7 +76,6 @@ export class QueryBuilder<T> {
     if (this.query?.sortBy) {
       const order = (this.query.sortOrder as string) === "desc" ? "-" : "";
       sortBy = `${order}${this.query.sortBy}`;
-      console.log(sortBy);
     }
 
     if (this.useAggregate) {
