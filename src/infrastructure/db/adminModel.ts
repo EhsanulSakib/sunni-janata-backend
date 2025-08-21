@@ -3,10 +3,9 @@ import mongoose from "mongoose";
 import { DatabaseNames } from "../../shared/utils/enums";
 
 export interface IAdmin {
-  title: "Admin";
   userId: number;
   password: string;
-  role: string;
+  role?: string;
 }
 
 export interface IAdminDocument extends IAdmin, mongoose.Document {
@@ -18,11 +17,6 @@ export interface IAdminModel extends mongoose.Model<IAdminDocument> {}
 
 const adminSchema = new mongoose.Schema<IAdminDocument>(
   {
-    title: {
-      type: String,
-      required: true,
-      default: "Admin",
-    },
     userId: {
       type: Number,
       required: true,
