@@ -1,7 +1,5 @@
 // src/server.ts
-
 import "reflect-metadata";
-
 import express, { Application } from "express";
 import cors from "cors";
 import morgan from "morgan";
@@ -16,6 +14,11 @@ import globalErrorHandler from "./shared/errors/global_error_handlar";
 
 // import AppError from './shared/errors/app_errors';
 // import { StatusCodes } from 'http-status-codes';
+
+// Routen Imports
+import AdminRoutes from "./interface/http/routes/adminRoutes";
+import UserRouter from "./interface/http/routes/userRoutes";
+
 
 // error handlers
 
@@ -54,7 +57,8 @@ app.use(
 );
 
 // Routes
-
+app.use("/api/v1/admin", AdminRoutes);
+app.use("/api/v1/user", UserRouter);
 
 
 // app.all("*", (req, res, next) => {
