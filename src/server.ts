@@ -18,6 +18,7 @@ import globalErrorHandler from "./shared/errors/global_error_handlar";
 // Routen Imports
 import AdminRoutes from "./interface/http/routes/adminRoutes";
 import UserRouter from "./interface/http/routes/userRoutes";
+import ContactMessageRouter from "./interface/http/routes/contactRoutes";
 
 
 // error handlers
@@ -59,6 +60,7 @@ app.use(
 // Routes
 app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/user", UserRouter);
+app.use("/api/v1/contact-message", ContactMessageRouter);
 
 
 // app.all("*", (req, res, next) => {
