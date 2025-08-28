@@ -4,7 +4,7 @@ import { DatabaseNames, LocationLevels } from "../../shared/utils/enums";
 export interface ILocation {
   title: string;
   level: LocationLevels;
-  parentLevel: mongoose.Schema.Types.ObjectId | null;
+  parentLocation: mongoose.Schema.Types.ObjectId | null;
 }
 
 export interface ILocationDocument extends ILocation, mongoose.Document {
@@ -26,7 +26,7 @@ const locationSchema = new mongoose.Schema<ILocationDocument>(
       enum: LocationLevels,
       required: true,
     },
-    parentLevel: {
+    parentLocation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: DatabaseNames.Location,
       default: null,
@@ -35,10 +35,11 @@ const locationSchema = new mongoose.Schema<ILocationDocument>(
   { timestamps: true }
 );
 
-const Location = mongoose.model<ILocationDocument, ILocationModel>(
+
+const LocationModel = mongoose.model<ILocationDocument, ILocationModel>(
   DatabaseNames.Location,
   locationSchema,
   DatabaseNames.Location
 );
 
-export default Location;
+export default LocationModel;

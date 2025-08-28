@@ -2,7 +2,7 @@ import expreee from "express";
 
 const router = expreee.Router();
 
-// // used to register a form
+// used to register a form
 // router.route("/register-req").post();
 // // verify the otp after registration
 // router.route("/otp-verify").post();

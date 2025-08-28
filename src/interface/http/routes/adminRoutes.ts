@@ -3,12 +3,17 @@ import AdminController from "../controller/adminController";
 import AdminRepository from "../../../infrastructure/repositories/adminRepository";
 import AdminModel from "../../../infrastructure/db/adminModel";
 import AdminService from "../../../infrastructure/services/adminService";
+import DesignationRepository from "../../../infrastructure/repositories/designationRepository";
+import DesignationModel from "../../../infrastructure/db/designationModel";
+import { authenticate } from "../middlewares/auth_middleware";
+import { UserRoles } from "../../../shared/utils/enums";
 
 const router = express.Router();
 
 // controller setup
 const adminRepository = new AdminRepository(AdminModel);
-const service = new AdminService(adminRepository);
+const designation = new DesignationRepository(DesignationModel);
+const service = new AdminService(adminRepository, designation);
 const controller = new AdminController(service);
 
 // authentication
@@ -21,8 +26,19 @@ router.route("/numbers").get(controller.getNumbers);
 // fetches all account requests, and new request counts
 router
   .route("/accout-requests")
-  .get(controller.getAccountRequests)
-  .put(controller.markAccountRequestsRead); //put marks the messages as read
+  .get(authenticate([UserRoles.Admin]), controller.getAccountRequests)
+  .put(authenticate([UserRoles.Admin]), controller.markAccountRequestsRead); //put marks the messages as read
+
+// designation operations
+router
+  .route("/designations")
+  .get(controller.getDesignations)
+  .post(authenticate([UserRoles.Admin]), controller.createDesignation);
+router
+  .route("/designations/:desId")
+  .get(controller.getDesignationDetails)
+  .put(authenticate([UserRoles.Admin]), controller.updateDesignation)
+  .delete(authenticate([UserRoles.Admin]), controller.deleteDesignation);
 
 // // to approve reject a request
 // router.route("/accout-requests/:id").put();
@@ -31,8 +47,6 @@ router
 // router.route("/members").get();
 // // to get the details of the memebers
 // router.route("/members/:id").get().delete().put();
-
-
 
 // // get all committies probably search with name, and create new ones
 // router.route("/committees").get().post();

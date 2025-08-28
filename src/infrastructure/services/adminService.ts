@@ -4,6 +4,8 @@ import { IAdmin, IAdminDocument } from "../db/adminModel";
 import { IAdminRepository } from "../repositories/adminRepository";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
+import { IDesignationRepository } from "../repositories/designationRepository";
+import { IDesignation, IDesignationDocument } from "../db/designationModel";
 
 export interface IAdminService {
   login(
@@ -16,12 +18,27 @@ export interface IAdminService {
     oldPassword: string,
     password: string
   ): Promise<IAdminDocument>;
+
+  createDesignation(data: IDesignation): Promise<IDesignationDocument>;
+  updateDesignation(
+    id: string,
+    data: IDesignation
+  ): Promise<IDesignationDocument>;
+  deleteDesignation(id: string): Promise<IDesignationDocument>;
+  getAllDesignation(): Promise<IDesignationDocument[]>;
+  getDesignationById(id: string): Promise<IDesignationDocument>;
+
 }
 
 export default class AdminService implements IAdminService {
   Repository: IAdminRepository;
-  constructor(Repository: IAdminRepository) {
+  DesignationRepository: IDesignationRepository;
+  constructor(
+    Repository: IAdminRepository,
+    DesignationRepository: IDesignationRepository
+  ) {
     this.Repository = Repository;
+    this.DesignationRepository = DesignationRepository;
   }
   async login(
     uid: number,
@@ -35,11 +52,9 @@ export default class AdminService implements IAdminService {
     if (!isPasswordCorrect)
       throw new AppError(StatusCodes.UNAUTHORIZED, "Invalid credentials");
     // signing the api
-    const token = jwt.sign(
-      { id: admin._id, role: admin.role },
-      process.env.JWT_SECRET || "secret",
-      { expiresIn: "1d" }
-    );
+    const secret = process.env.JWT_SECRET || "jwt_secret";
+    const token = jwt.sign({ id: admin._id, role: admin.role }, secret);
+
     return { data: admin, token };
   }
   async register(data: IAdmin): Promise<IAdminDocument> {
@@ -72,4 +87,31 @@ export default class AdminService implements IAdminService {
       password: hashedPassword,
     });
   }
+
+  async createDesignation(data: IDesignation): Promise<IDesignationDocument> {
+    const designation = await this.DesignationRepository.findByName(data.title);
+    if (designation)
+      throw new AppError(StatusCodes.CONFLICT, "Designation already exists");
+    return await this.DesignationRepository.createDesignation(data);
+  }
+  async updateDesignation(
+    id: string,
+    data: IDesignation
+  ): Promise<IDesignationDocument> {
+    return await this.DesignationRepository.updateDesgination(id, data);
+  }
+
+  async deleteDesignation(id: string): Promise<IDesignationDocument> {
+    return await this.DesignationRepository.deleteDesignation(id);
+  }
+  async getAllDesignation(): Promise<IDesignationDocument[]> {
+    return await this.DesignationRepository.getAllDesignations();
+  }
+  async getDesignationById(id: string): Promise<IDesignationDocument> {
+    const designation = await this.DesignationRepository.getDesignationById(id);
+    if (!designation)
+      throw new AppError(StatusCodes.NOT_FOUND, "Designation not found");
+    return designation;
+  }
+  
 }

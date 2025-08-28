@@ -19,6 +19,8 @@ import globalErrorHandler from "./shared/errors/global_error_handlar";
 import AdminRoutes from "./interface/http/routes/adminRoutes";
 import UserRouter from "./interface/http/routes/userRoutes";
 import ContactMessageRouter from "./interface/http/routes/contactRoutes";
+import CommitteeLocationRouter from "./interface/http/routes/committeeLocationRoutes";
+
 
 
 // error handlers
@@ -61,6 +63,7 @@ app.use(
 app.use("/api/v1/admin", AdminRoutes);
 app.use("/api/v1/user", UserRouter);
 app.use("/api/v1/contact-message", ContactMessageRouter);
+app.use("/api/v1/committee-location", CommitteeLocationRouter);
 
 
 // app.all("*", (req, res, next) => {

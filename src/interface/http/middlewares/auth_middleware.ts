@@ -21,7 +21,7 @@ declare global {
   }
 }
 
-const secret = process.env.JWT_SECRET || 'jwt_secret';
+
 
 // Higher-order middleware to accept roles
 export const authenticate =
@@ -35,8 +35,10 @@ export const authenticate =
       );
     }
 
+    const secret = process.env.JWT_SECRET || 'jwt_secret';
+    
     const token = authHeader.split(' ')[1];
-
+    
     try {
       const decoded = jwt.verify(token, secret) as JwtPayload;
       req.user = decoded;
