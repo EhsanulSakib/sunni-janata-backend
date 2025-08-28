@@ -16,6 +16,12 @@ export enum LocationLevels {
   ward = "ward",
 }
 
+export enum ApproveStatus {
+  Approved = "approved",
+  Pending = "pending",
+  Rejected = "rejected",
+}
+
 export enum CommitteeType {
   Student = "student",
   Youth = "youth",

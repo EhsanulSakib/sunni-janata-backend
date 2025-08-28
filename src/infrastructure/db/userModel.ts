@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { DatabaseNames } from "../../shared/utils/enums";
+import { ApproveStatus, DatabaseNames } from "../../shared/utils/enums";
 
 export interface IUser {
   fullName: string;
@@ -13,6 +13,7 @@ export interface IUser {
   ward: string;
   requestedPosition: string;
   inspiration: string;
+  accountStatus: ApproveStatus;
   verifiedUser?: boolean;
   otp?: number;
 }
@@ -37,6 +38,7 @@ const userSchema = new mongoose.Schema<IUserDocument>(
     ward: { type: String, required: true },
     requestedPosition: { type: String, required: true },
     inspiration: { type: String, required: true },
+    accountStatus: { type: String, default: ApproveStatus.Pending },
     verifiedUser: { type: Boolean, default: false },
     otp: { type: Number },
   },
