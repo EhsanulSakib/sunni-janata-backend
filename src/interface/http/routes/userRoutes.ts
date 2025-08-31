@@ -35,6 +35,9 @@ router
   .route("/change-password")
   .post(authenticate([UserRoles.User]), controller.changePassword);
 router.route("/forget-password").post(controller.forgetPassword);
+
+router.route("/my-profile").get(authenticate([UserRoles.User]), controller.getMyProfile);
+router.route("/profile/:id").get(authenticate(), controller.getProfileWithId);
 // // send edit requests
 // router.route("/request-edit").post();
 // //get profile info

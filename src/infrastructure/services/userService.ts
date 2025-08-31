@@ -90,7 +90,7 @@ export default class UserService implements IUserService {
       api_key: process.env.SMS_API_KEY,
       senderid: process.env.SMS_SENDER_ID,
       number: phone,
-      message: `Your Sunni Janata Platform OTP is ${otpNumber}`,
+      message: `Your Sunni Janata Party OTP is ${otpNumber}`,
     };
     let code = 202;
     try {
@@ -199,5 +199,11 @@ export default class UserService implements IUserService {
     return await this.UserRepository.updateUser(user?._id as string, {
       password: hashedPassword,
     });
+  }
+
+  async getProfile(id: string): Promise<IUserDocument> {
+    const user = await this.UserRepository.getUserById(id);
+    if (!user) throw new AppError(StatusCodes.NOT_FOUND, "user not found");
+    return user;
   }
 }

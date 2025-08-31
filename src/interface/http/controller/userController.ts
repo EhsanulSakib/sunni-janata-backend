@@ -2,7 +2,13 @@ import { Request, Response } from "express";
 import catchAsync from "../../../shared/utils/catch_async";
 import { IUser } from "../../../infrastructure/db/userModel";
 import { IUserService } from "../../../infrastructure/services/userService";
-import { validateAccountRequest, validateChangePassword, validateForgetPassword, validateLogin, validateStatus } from "../validators/validateUsers";
+import {
+  validateAccountRequest,
+  validateChangePassword,
+  validateForgetPassword,
+  validateLogin,
+  validateStatus,
+} from "../validators/validateUsers";
 import sendResponse from "../../../shared/utils/send_response";
 import { StatusCodes } from "http-status-codes";
 import { Query } from "mongoose";
@@ -51,9 +57,12 @@ export default class UserController {
   });
 
   updateAccountStatus = catchAsync(async (req: Request, res: Response) => {
-    const {  status } = req.body;
+    const { status } = req.body;
     validateStatus(status);
-    const result = await this.Service.updateAccountStatus(req.params.id, status);
+    const result = await this.Service.updateAccountStatus(
+      req.params.id,
+      status
+    );
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
@@ -62,11 +71,13 @@ export default class UserController {
     });
   });
 
-
   getAccountsByStatus = catchAsync(async (req: Request, res: Response) => {
     const { status } = req.params;
     validateStatus(status);
-    const result = await this.Service.getUsersByStatus(status as ApproveStatus, req.query);
+    const result = await this.Service.getUsersByStatus(
+      status as ApproveStatus,
+      req.query
+    );
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
@@ -78,7 +89,7 @@ export default class UserController {
   loginUser = catchAsync(async (req: Request, res: Response) => {
     const { phone, password } = req.body;
     validateLogin(req.body);
-    const {result, token} = await this.Service.userLogin(phone, password);
+    const { result, token } = await this.Service.userLogin(phone, password);
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
@@ -90,7 +101,11 @@ export default class UserController {
   changePassword = catchAsync(async (req: Request, res: Response) => {
     const { oldPassword, newPassword } = req.body;
     validateChangePassword(req.body);
-    const result = await this.Service.changePassword(req.user!.id, oldPassword, newPassword);
+    const result = await this.Service.changePassword(
+      req.user!.id,
+      oldPassword,
+      newPassword
+    );
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
@@ -106,6 +121,26 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `Password changed successfully`,
+      result: result,
+    });
+  });
+
+  getMyProfile = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.Service.getProfile(req.user!.id);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `Profile fetched successfully`,
+      result: result,
+    });
+  });
+
+  getProfileWithId = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.Service.getProfile(req.params.id);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `Profile fetched successfully`,
       result: result,
     });
   });
