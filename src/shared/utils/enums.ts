@@ -33,3 +33,7 @@ export enum UserRoles {
   Admin = "admin",
   User = "user",
 }
+
+export enum CloudinaryFolders{
+  User = 'users',
+}

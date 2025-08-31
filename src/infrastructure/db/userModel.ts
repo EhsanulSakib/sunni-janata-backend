@@ -3,17 +3,20 @@ import { ApproveStatus, DatabaseNames } from "../../shared/utils/enums";
 
 export interface IUser {
   fullName: string;
-  email: string;
+  email?: string;
   phone: string;
+  avatar?: string;
+  password: string;
   dob: Date;
   division: string;
   district: string;
-  subDistrict: string;
+  upazila: string;
+  thana: string;
   union: string;
   ward: string;
   requestedPosition: string;
   inspiration: string;
-  accountStatus: ApproveStatus;
+  accountStatus?: ApproveStatus;
   verifiedUser?: boolean;
   otp?: number;
 }
@@ -30,10 +33,13 @@ const userSchema = new mongoose.Schema<IUserDocument>(
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true, unique: true },
+    avatar: { type: String},
+    password: { type: String, required: true },
     dob: { type: Date, required: true },
     division: { type: String, required: true },
     district: { type: String, required: true },
-    subDistrict: { type: String, required: true },
+    upazila: { type: String, required: true },
+    thana: { type: String, required: true },
     union: { type: String, required: true },
     ward: { type: String, required: true },
     requestedPosition: { type: String, required: true },
