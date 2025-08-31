@@ -2,9 +2,11 @@ import { Request, Response } from "express";
 import catchAsync from "../../../shared/utils/catch_async";
 import { IUser } from "../../../infrastructure/db/userModel";
 import { IUserService } from "../../../infrastructure/services/userService";
-import { validateAccountRequest } from "../validators/validateUsers";
+import { validateAccountRequest, validateChangePassword, validateForgetPassword, validateLogin, validateStatus } from "../validators/validateUsers";
 import sendResponse from "../../../shared/utils/send_response";
 import { StatusCodes } from "http-status-codes";
+import { Query } from "mongoose";
+import { ApproveStatus } from "../../../shared/utils/enums";
 
 export default class UserController {
   Service: IUserService;
@@ -46,5 +48,65 @@ export default class UserController {
       message: `OTP verified successfully`,
       result: result,
     });
-  })
+  });
+
+  updateAccountStatus = catchAsync(async (req: Request, res: Response) => {
+    const {  status } = req.body;
+    validateStatus(status);
+    const result = await this.Service.updateAccountStatus(req.params.id, status);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `User status updated to ${status} successfully`,
+      result: result,
+    });
+  });
+
+
+  getAccountsByStatus = catchAsync(async (req: Request, res: Response) => {
+    const { status } = req.params;
+    validateStatus(status);
+    const result = await this.Service.getUsersByStatus(status as ApproveStatus, req.query);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `Users with status ${status} fetched successfully`,
+      result: result,
+    });
+  });
+
+  loginUser = catchAsync(async (req: Request, res: Response) => {
+    const { phone, password } = req.body;
+    validateLogin(req.body);
+    const {result, token} = await this.Service.userLogin(phone, password);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `User logged in successfully`,
+      result: result,
+      access_token: token,
+    });
+  });
+  changePassword = catchAsync(async (req: Request, res: Response) => {
+    const { oldPassword, newPassword } = req.body;
+    validateChangePassword(req.body);
+    const result = await this.Service.changePassword(req.user!.id, oldPassword, newPassword);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `Password changed successfully`,
+      result: result,
+    });
+  });
+  forgetPassword = catchAsync(async (req: Request, res: Response) => {
+    const { phone, otp, newPassword } = req.body;
+    validateForgetPassword(req.body);
+    const result = await this.Service.forgetPassword(phone, otp, newPassword);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `Password changed successfully`,
+      result: result,
+    });
+  });
 }

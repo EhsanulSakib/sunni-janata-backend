@@ -35,11 +35,21 @@ export class UserPolicy {
         StatusCodes.BAD_REQUEST,
         `${phone} is not registered`
       );
-    if(existingUser && existingUser.verifiedUser)
-        throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        `${phone} is already verified to a user`
-      );
-    
+
+  }
+
+  static async ensureUpdateProfile(UserRepository: IUserRepository, id: string) {
+    const existingUser = await UserRepository.getUserById(id);
+    if(!existingUser?.verifiedUser)
+      throw new AppError(StatusCodes.BAD_REQUEST, `account with _id -> ${id} is not verified`);
+    if (!existingUser)throw new AppError(StatusCodes.BAD_REQUEST, `account with _id -> ${id} does not exists`);
+  }
+
+  static async ensureUserLogin(UserRepository: IUserRepository, phone: string) {
+    const user = await UserRepository.getUserByPhone(phone);
+    if (!user) throw new AppError(StatusCodes.BAD_REQUEST, `an account with ${phone} is not registered`);
+    if (!user.verifiedUser)
+      throw new AppError(StatusCodes.BAD_REQUEST, `user with ${phone} is not verified`);
+    return user;
   }
 }
