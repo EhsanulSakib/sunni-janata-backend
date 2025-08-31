@@ -16,7 +16,7 @@ router.route("/register-req").post(upload.single("avatar"),controller.requestReg
 // // verify the otp after registration
 router.route("/request-otp").post(controller.requestOtp);
 
-// router.route("/otp-verify").post();
+router.route("/otp-verify").post(controller.verifyOtp);
 // // login
 // router.route("/login").post()
 // // send edit requests

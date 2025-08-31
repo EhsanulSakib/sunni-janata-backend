@@ -35,5 +35,16 @@ export default class UserController {
     });
   });
 
-  verifyOtp = catchAsync()
+  verifyOtp = catchAsync(async (req: Request, res: Response) => {
+    const { phone, otp } = req.body;
+    if (!phone) throw new Error("Phone number is required");
+    if (!otp) throw new Error("OTP is required");
+    const result = await this.Service.verifyOTP(phone, otp);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `OTP verified successfully`,
+      result: result,
+    });
+  })
 }
