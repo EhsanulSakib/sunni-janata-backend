@@ -14,7 +14,6 @@ export const uploadFileToCloudinary = ({
 }) => {
   const fileHash = generateFileHash(file.buffer);
   const publicId = `${fileHash}`;
-  console.log(publicId);
   return new Promise<string>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
@@ -43,7 +42,6 @@ export const deleteFileFromCloudinary = async ({
     const result = await cloudinary.uploader.destroy(publicId, {
       resource_type: isVideo ? "video" : "image",
     });
-    console.log(result.result);
 
     if (result.result == "not found")
       throw new AppError(StatusCodes.INTERNAL_SERVER_ERROR, "File not found");

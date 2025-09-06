@@ -15,6 +15,7 @@ import { ReturnDocument } from "mongodb";
 import { IPagination } from "../../shared/utils/query_builder";
 import jwt from "jsonwebtoken";
 import { appendFile } from "fs";
+import OTPHandler from "../handlers/otpHandler";
 
 export interface IUserService {
   requestRegistration(
@@ -86,25 +87,11 @@ export default class UserService implements IUserService {
     await this.UserRepository.updateUser(getUser?._id as string, {
       otp: otpNumber,
     });
-    const msgBody = {
-      api_key: process.env.SMS_API_KEY,
-      senderid: process.env.SMS_SENDER_ID,
-      number: phone,
-      message: `Your Sunni Janata Party OTP is ${otpNumber}`,
-    };
-    let code = 202;
-    try {
-      const res = await axios.post("http://bulksmsbd.net/api/smsapi", msgBody);
-      console.log(res.data);
-      code = res.data.response_code;
-    } catch (error) {
-      console.error("Failed to send OTP:", error);
-      throw new AppError(
-        StatusCodes.INTERNAL_SERVER_ERROR,
-        "SMS sending failed"
-      );
-    }
-    return { message: otpStatusCodeToMessage(code) };
+
+    const message = `Your Sunni Janata Party OTP is ${otpNumber}`
+    const oTPHandler = new OTPHandler();
+    const res = await oTPHandler.sendSmsOTP(phone, message);
+    return res;
   }
 
   async verifyOTP(phone: string, otp: number): Promise<boolean> {

@@ -42,7 +42,8 @@ app.use(
       "https://softcode-ecommerce.netlify.app",
       "http://localhost:3000",
       "https://3000-firebase-ecommerce-frontend-1750521981814.cluster-ejd22kqny5htuv5dfowoyipt52.cloudworkstations.dev",
-      "http://localhost:5173"
+      "http://localhost:5173",
+      "https://sunnijanata.com"
     ],
     credentials: true,
   })
