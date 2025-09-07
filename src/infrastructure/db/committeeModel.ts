@@ -5,7 +5,7 @@ export interface ICommittee {
   title: string;
   type: CommitteeType;
   location: mongoose.Schema.Types.ObjectId; // exp -> _id of division or any other down the ladder
-  parentLocation: mongoose.Schema.Types.ObjectId; // exp -> _id of division or any other down the ladder
+  parentLocation?: mongoose.Schema.Types.ObjectId; // exp -> _id of division or any other down the ladder
   president: mongoose.Schema.Types.ObjectId; // _id of the president of the committee
   description?: string;
   address?: string;
@@ -37,7 +37,7 @@ const committeeSchema = new mongoose.Schema<ICommitteeDocument>(
     parentLocation: {
       type: mongoose.Schema.Types.ObjectId,
       ref: DatabaseNames.Location,
-      required: true,
+      default: null,
     },
     president: {
       type: mongoose.Schema.Types.ObjectId,

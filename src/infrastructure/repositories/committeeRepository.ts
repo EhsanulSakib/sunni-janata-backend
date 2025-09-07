@@ -1,9 +1,11 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../shared/errors/app_errors";
 import { ICommittee, ICommitteeDocument, ICommitteeModel } from "../db/committeeModel";
+import { IPagination, QueryBuilder } from "../../shared/utils/query_builder";
 
 export interface ICommitteeRepository {
   create(committee: ICommittee): Promise<ICommitteeDocument>;
+  getCommittee(query: Record<string, unknown>): Promise<{pagination: IPagination, committees: ICommitteeDocument[]}>;
 //   getCommittee(parentLocation: string | null): Promise<ICommitteeDocument[]>;
 //   getById(id: string): Promise<ICommitteeDocument>;
 //   update(id: string, committee: Partial<ICommittee>): Promise<ICommitteeDocument>;
@@ -28,6 +30,14 @@ export default class CommitteeRepository implements ICommitteeRepository {
             throw new AppError(StatusCodes.NOT_FOUND, "Committee not found");
         }
         return deletedCommittee;
+    }
+
+    async getCommittee(query: Record<string, unknown>): Promise<{ pagination: IPagination; committees: ICommitteeDocument[]; }> {
+        const qb = new QueryBuilder(this.Model, query);
+        const res = qb.find({location: query.location??  null, parentLocation: query.parentLocation?? null}).sort().paginate();
+        const committees = await res.exec();
+        const pagination = await res.countTotal();
+        return { committees, pagination };
     }
     
     // async getCommittee(parentLocation: string | null): Promise<ICommitteeDocument[]> {

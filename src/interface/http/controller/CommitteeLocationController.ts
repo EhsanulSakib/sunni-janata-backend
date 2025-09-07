@@ -1,7 +1,11 @@
 import { Request, Response } from "express";
 import { ICommitteeLocationService } from "../../../infrastructure/services/committeeLocationService";
 import catchAsync from "../../../shared/utils/catch_async";
-import { validateCreateLocation, validateEditLocation } from "../validators/validateCommitteeLocation";
+import {
+  validateCreateCommittee,
+  validateCreateLocation,
+  validateEditLocation,
+} from "../validators/validateCommitteeLocation";
 import sendResponse from "../../../shared/utils/send_response";
 
 export default class CommitteeLocationController {
@@ -80,5 +84,60 @@ export default class CommitteeLocationController {
       message: "Location deleted successfully",
       result: result,
     });
+  });
+
+  createCommittee = catchAsync(async (req: Request, res: Response) => {
+    validateCreateCommittee(req.body);
+    const {
+      title,
+      type,
+      location,
+      parentLocation,
+      president,
+      description,
+      address,
+    } = req.body;
+    const result = await this.Service.createCommittee({
+      title,
+      type,
+      location,
+      parentLocation,
+      president,
+      description,
+      address,
+    });
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Committee created successfully",
+      result: result,
+    });
+  });
+
+  getCommittees = catchAsync(async (req: Request, res: Response) => {
+    const result = await this.Service.getCommittees(req.query);
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Committees fetched successfully",
+      result: result.committees,
+      meta: result.pagination,
+    });
+  });
+
+  getCommitteeLocationFilter = catchAsync(async (req: Request, res: Response) => {
+    throw new Error("not implemented");
+  })
+
+  disbandCommittee = catchAsync(async (req: Request, res: Response) => {
+    throw new Error("not implemented");
+  })
+
+  updateCommitteeInformation = catchAsync(async (req: Request, res: Response) => {
+    throw new Error("not implemented");
+  });
+
+  getCommitteeDetails = catchAsync(async (req: Request, res: Response) => {
+    throw new Error("not implemented");
   });
 }

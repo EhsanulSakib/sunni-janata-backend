@@ -31,4 +31,16 @@ router
   .put(authenticate([UserRoles.Admin]), controller.updateLocation)
   .delete(authenticate([UserRoles.Admin]), controller.deleteLocation);
 
+router
+  .route("/committee")
+  .post(authenticate([UserRoles.Admin]), controller.createCommittee)
+  .get(controller.getCommittees);
+
+
+router
+  .route("/committee/:comId")
+  .get(controller.getCommitteeDetails)
+  .put(authenticate([UserRoles.Admin]), controller.updateCommitteeInformation)
+  .delete(authenticate([UserRoles.Admin]), controller.disbandCommittee);
+
 export default router;

@@ -4,6 +4,8 @@ import { ILocation } from "../db/locationModel";
 import { ICommitteeRepository } from "../repositories/committeeRepository";
 import { ILocationRepository } from "../repositories/locationRepository";
 import { DeleteResult } from "mongoose";
+import { ICommittee, ICommitteeDocument } from "../db/committeeModel";
+import { IPagination } from "../../shared/utils/query_builder";
 
 export interface ICommitteeLocationService {
   createLocation(location: ILocation): Promise<ILocation>;
@@ -14,9 +16,13 @@ export interface ICommitteeLocationService {
     location: Partial<ILocation>
   ): Promise<ILocation | null>;
   deleteLocation(id: string): Promise<DeleteResult>;
+  createCommittee(committee: ICommittee): Promise<ICommitteeDocument>;
+  getCommittees(query: Record<string, unknown>): Promise<{pagination: IPagination, committees: ICommitteeDocument[]}>;
 }
 
-export default class CommitteeLocationService {
+export default class CommitteeLocationService
+  implements ICommitteeLocationService
+{
   LocationRepository: ILocationRepository;
   CommitteeRepository: ICommitteeRepository;
 
@@ -84,5 +90,15 @@ export default class CommitteeLocationService {
     if (!deleted)
       throw new AppError(StatusCodes.NOT_FOUND, "Location not found");
     return deleted;
+  }
+
+  async createCommittee(committee: ICommittee): Promise<ICommitteeDocument> {
+    const newCommittee = await this.CommitteeRepository.create(committee);
+    return newCommittee;
+  }
+
+  async getCommittees(query: Record<string, unknown>): Promise<{ pagination: IPagination; committees: ICommitteeDocument[]; }> {
+    const committees = await this.CommitteeRepository.getCommittee(query);
+    return committees;
   }
 }
