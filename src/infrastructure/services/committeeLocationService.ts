@@ -6,6 +6,10 @@ import { ILocationRepository } from "../repositories/locationRepository";
 import { DeleteResult } from "mongoose";
 import { ICommittee, ICommitteeDocument } from "../db/committeeModel";
 import { IPagination } from "../../shared/utils/query_builder";
+import { LocationCommitteePolicty } from "../policies/locationCommitteePolicy";
+import { IUserRepository } from "../repositories/userRepository";
+import { UserPolicy } from "../policies/userPolicies";
+import { IDesignationRepository } from "../repositories/designationRepository";
 
 export interface ICommitteeLocationService {
   createLocation(location: ILocation): Promise<ILocation>;
@@ -18,6 +22,7 @@ export interface ICommitteeLocationService {
   deleteLocation(id: string): Promise<DeleteResult>;
   createCommittee(committee: ICommittee): Promise<ICommitteeDocument>;
   getCommittees(query: Record<string, unknown>): Promise<{pagination: IPagination, committees: ICommitteeDocument[]}>;
+  disbandCommittee(id: string): Promise<ICommitteeDocument>;
 }
 
 export default class CommitteeLocationService
@@ -25,13 +30,19 @@ export default class CommitteeLocationService
 {
   LocationRepository: ILocationRepository;
   CommitteeRepository: ICommitteeRepository;
+  UserRepository: IUserRepository;
+  DesignationRepository: IDesignationRepository;
 
   constructor(
     locationRepository: ILocationRepository,
-    committeeRepository: ICommitteeRepository
+    committeeRepository: ICommitteeRepository,
+    userRepository: IUserRepository,
+    designationRepository: IDesignationRepository,
   ) {
     this.LocationRepository = locationRepository;
     this.CommitteeRepository = committeeRepository;
+    this.UserRepository = userRepository;
+    this.DesignationRepository = designationRepository;
   }
 
   async createLocation(location: ILocation): Promise<ILocation> {
@@ -93,12 +104,26 @@ export default class CommitteeLocationService
   }
 
   async createCommittee(committee: ICommittee): Promise<ICommitteeDocument> {
+    const user = await UserPolicy.ensureUserExistance(this.UserRepository, committee.president as string);
+    const designation = await this.DesignationRepository.getDesignationById(user.assignedPosition as string);
+    if (designation && designation.level == 1)
+      throw new AppError(StatusCodes.BAD_REQUEST, `${user.fullName} is already a president`);
     const newCommittee = await this.CommitteeRepository.create(committee);
+    const presidentId = await this.DesignationRepository.getPresidentId();
+    await this.UserRepository.updateUser(user._id as string, {assignedCommittee: newCommittee._id as string, assignedPosition: presidentId});
     return newCommittee;
   }
 
   async getCommittees(query: Record<string, unknown>): Promise<{ pagination: IPagination; committees: ICommitteeDocument[]; }> {
     const committees = await this.CommitteeRepository.getCommittee(query);
     return committees;
+  }
+
+  async disbandCommittee(id: string): Promise<ICommitteeDocument> {
+    await LocationCommitteePolicty.ensureCommittee(this.CommitteeRepository, id);
+    // removing all the members associated with the community
+    const removedPosition = await this.UserRepository.updateMany({assignedCommittee: id}, {assignedCommittee: null, assignedPosition: null});
+    const deletedCommittee = await this.CommitteeRepository.delete(id);
+    return deletedCommittee;
   }
 }

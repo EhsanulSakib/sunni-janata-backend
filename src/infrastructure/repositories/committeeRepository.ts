@@ -25,12 +25,11 @@ export default class CommitteeRepository implements ICommitteeRepository {
     }
 
     async delete(id: string): Promise<ICommitteeDocument> {
-        throw new AppError(StatusCodes.NOT_IMPLEMENTED, "Method not implemented.");
-        // const deletedCommittee = await this.Model.findByIdAndDelete(id);
-        // if (!deletedCommittee) {
-        //     throw new AppError(StatusCodes.NOT_FOUND, "Committee not found");
-        // }
-        // return deletedCommittee;
+        const deletedCommittee = await this.Model.findByIdAndDelete(id);
+        if (!deletedCommittee) {
+            throw new AppError(StatusCodes.NOT_FOUND, "Committee not found");
+        }
+        return deletedCommittee;
     }
 
     async getCommitteeById(id: string): Promise<ICommitteeDocument | null> {

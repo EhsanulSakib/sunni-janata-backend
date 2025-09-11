@@ -1,3 +1,4 @@
+import { promises } from "dns";
 import {
   IDesignation,
   IDesignationDocument,
@@ -14,6 +15,7 @@ export interface IDesignationRepository {
   getDesignationById(id: string): Promise<IDesignationDocument | null>;
   getAllDesignations(): Promise<IDesignationDocument[]>;
   findByName(name: string): Promise<IDesignationDocument | null>;
+  getPresidentId(): Promise<string>;
 }
 
 export default class DesignationRepository implements IDesignationRepository {
@@ -60,4 +62,13 @@ export default class DesignationRepository implements IDesignationRepository {
   async findByName(name: string): Promise<IDesignationDocument | null> {
     return await this.Model.findOne({ title: name });
   }
+
+  async getPresidentId(): Promise<string> {
+    const presidentDesignation = await this.Model.findOne({ level: 1 });
+    if (!presidentDesignation) {
+      throw new Error("President designation not found");
+    }
+    return presidentDesignation._id as string;
+  }
+  
 }

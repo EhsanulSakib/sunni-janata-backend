@@ -19,8 +19,8 @@ export interface IUser {
   union: string;
   ward: string;
   requestedPosition: string;
-  assignedPosition: mongoose.Schema.Types.ObjectId | string;
-  assignedCommittee: mongoose.Schema.Types.ObjectId | string;
+  assignedPosition: mongoose.Schema.Types.ObjectId | string | null;
+  assignedCommittee: mongoose.Schema.Types.ObjectId | string | null;
   inspiration: string;
   role: string;
   accountStatus?: ApproveStatus;

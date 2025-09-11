@@ -220,22 +220,32 @@ export default class UserService implements IUserService {
     designation: string,
     committee: string
   ): Promise<IUserDocument> {
-    const existingCommittee = await LocationCommitteePolicty.ensureCommittee(
-      this.CommitteeRepository,
-      committee
+    const user = await UserPolicy.ensureUserExistance(
+      this.UserRepository,
+      userId
     );
-    const assignedDesignation = await DesignationPolicy.ensureDesignnation(
+
+    
+    const userDesignation = await this.DesignationRepository.getDesignationById(
+      user.assignedPosition as string
+    );
+    const userCommittee = await this.CommitteeRepository.getCommitteeById(
+      user.assignedCommittee as string
+    );
+       
+    if (userDesignation && userCommittee && userDesignation.level == 1)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `${user.fullName} is already a president of ${userCommittee.title}`
+      );
+    await DesignationPolicy.ensureDesignnation(
       this.DesignationRepository,
       designation
     );
-
-    if (existingCommittee.president && assignedDesignation.level == 1)
-      throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        "committee already has a president"
-      );
-
-    await UserPolicy.ensureUserExistance(this.UserRepository, userId);
+    await LocationCommitteePolicty.ensureCommittee(
+      this.CommitteeRepository,
+      committee
+    );
     return await this.UserRepository.updateUser(userId, {
       assignedPosition: designation,
       assignedCommittee: committee,

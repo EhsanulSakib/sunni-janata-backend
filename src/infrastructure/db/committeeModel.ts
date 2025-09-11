@@ -4,9 +4,9 @@ import { CommitteeType, DatabaseNames } from "../../shared/utils/enums";
 export interface ICommittee {
   title: string;
   type: CommitteeType;
-  location: mongoose.Schema.Types.ObjectId; // exp -> _id of division or any other down the ladder
-  parentLocation?: mongoose.Schema.Types.ObjectId; // exp -> _id of division or any other down the ladder
-  president: mongoose.Schema.Types.ObjectId; // _id of the president of the committee
+  location: mongoose.Schema.Types.ObjectId | string; // exp -> _id of division or any other down the ladder
+  parentLocation?: mongoose.Schema.Types.ObjectId | string; // exp -> _id of division or any other down the ladder
+  president: mongoose.Schema.Types.ObjectId | string; // _id of the president of the committee
   description?: string;
   address?: string;
 }
@@ -55,9 +55,10 @@ const committeeSchema = new mongoose.Schema<ICommitteeDocument>(
     timestamps: true,
   }
 );
-const CommitteeModel = mongoose.model<
-  ICommitteeDocument,
-  ICommitteeModel
->(DatabaseNames.Committee, committeeSchema, DatabaseNames.Committee);
+const CommitteeModel = mongoose.model<ICommitteeDocument, ICommitteeModel>(
+  DatabaseNames.Committee,
+  committeeSchema,
+  DatabaseNames.Committee
+);
 
 export default CommitteeModel;

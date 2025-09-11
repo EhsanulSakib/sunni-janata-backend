@@ -130,7 +130,14 @@ export default class CommitteeLocationController {
   })
 
   disbandCommittee = catchAsync(async (req: Request, res: Response) => {
-    throw new Error("not implemented");
+    const { comId } = req.params;
+    const result = await this.Service.disbandCommittee(comId);
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Committee disbanded successfully",
+      result: result,
+    });
   })
 
   updateCommitteeInformation = catchAsync(async (req: Request, res: Response) => {

@@ -1,5 +1,5 @@
 import { StatusCodes } from "http-status-codes";
-import { IUser } from "../db/userModel";
+import { IUser, IUserDocument } from "../db/userModel";
 import { IUserRepository } from "../repositories/userRepository";
 import AppError from "../../shared/errors/app_errors";
 
@@ -53,7 +53,7 @@ export class UserPolicy {
     return user;
   }
   
-  static async ensureUserExistance(UserRepository: IUserRepository, id: string) {
+  static async ensureUserExistance(UserRepository: IUserRepository, id: string): Promise<IUserDocument> {
     const user = await UserRepository.getUserById(id);
     if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
     return user;

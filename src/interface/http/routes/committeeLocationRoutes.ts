@@ -8,15 +8,23 @@ import LocationModel from "../../../infrastructure/db/locationModel";
 import LocationRepository from "../../../infrastructure/repositories/locationRepository";
 import CommitteeLocationService from "../../../infrastructure/services/committeeLocationService";
 import CommitteeLocationController from "../controller/CommitteeLocationController";
+import UserRepository from "../../../infrastructure/repositories/userRepository";
+import UserModel from "../../../infrastructure/db/userModel";
+import DesignationRepository from "../../../infrastructure/repositories/designationRepository";
+import DesignationModel from "../../../infrastructure/db/designationModel";
 
 const router = express.Router();
 
 const locationRepository = new LocationRepository(LocationModel);
 const committeeRepository = new CommitteeRepository(CommitteeModel);
+const userRepository = new UserRepository(UserModel);
+const designationRepository = new DesignationRepository(DesignationModel);
 
 const service = new CommitteeLocationService(
   locationRepository,
-  committeeRepository
+  committeeRepository,
+  userRepository,
+  designationRepository
 );
 const controller = new CommitteeLocationController(service);
 

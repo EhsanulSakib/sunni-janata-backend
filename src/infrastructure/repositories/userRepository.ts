@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import AppError from "../../shared/errors/app_errors";
 import { IPagination, QueryBuilder } from "../../shared/utils/query_builder";
 import { IUser, IUserDocument, IUserModel } from "../db/userModel";
+import { UpdateResult } from "mongoose";
 
 export interface IUserRepository {
   createUser(data: IUser): Promise<IUserDocument>;
@@ -17,6 +18,10 @@ export interface IUserRepository {
     status: string,
     query: Record<string, unknown>
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }>;
+  updateMany(
+    filter:Partial<IUser>,
+    data: Partial<IUser>
+  ): Promise<UpdateResult>;
 }
 
 export default class UserRepository implements IUserRepository {
@@ -78,5 +83,9 @@ export default class UserRepository implements IUserRepository {
     const users = await rse.exec();
     const pagination = await rse.countTotal();
     return { users, pagination };
+  }
+
+  async updateMany(filter: Partial<IUser>, data: Partial<IUser>): Promise<UpdateResult> {
+    return await this.Model.updateMany(filter, data);
   }
 }
