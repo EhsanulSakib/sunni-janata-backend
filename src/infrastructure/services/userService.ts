@@ -16,6 +16,11 @@ import { IPagination } from "../../shared/utils/query_builder";
 import jwt from "jsonwebtoken";
 import { appendFile } from "fs";
 import OTPHandler from "../handlers/otpHandler";
+import { ILocationRepository } from "../repositories/locationRepository";
+import { ICommitteeRepository } from "../repositories/committeeRepository";
+import { LocationCommitteePolicty } from "../policies/locationCommitteePolicy";
+import { IDesignationRepository } from "../repositories/designationRepository";
+import DesignationPolicy from "../policies/designationPolicy";
 
 export interface IUserService {
   requestRegistration(
@@ -47,13 +52,29 @@ export interface IUserService {
     newPassword: string
   ): Promise<IUserDocument>;
   getProfile(id: string): Promise<IUserDocument>;
+  assignCommitteeDesignation(
+    userId: string,
+    designation: string,
+    committee: string
+  ): Promise<IUserDocument>;
 }
 
 export default class UserService implements IUserService {
   UserRepository: IUserRepository;
+  LocationRepository: ILocationRepository;
+  CommitteeRepository: ICommitteeRepository;
+  DesignationRepository: IDesignationRepository;
 
-  constructor(userRepository: IUserRepository) {
+  constructor(
+    userRepository: IUserRepository,
+    locationRepository: ILocationRepository,
+    committeeRepository: ICommitteeRepository,
+    designationRepository: IDesignationRepository
+  ) {
     this.UserRepository = userRepository;
+    this.LocationRepository = locationRepository;
+    this.CommitteeRepository = committeeRepository;
+    this.DesignationRepository = designationRepository;
   }
 
   async requestRegistration(
@@ -88,7 +109,7 @@ export default class UserService implements IUserService {
       otp: otpNumber,
     });
 
-    const message = `Your Sunni Janata Party OTP is ${otpNumber}`
+    const message = `Your Sunni Janata Party OTP is ${otpNumber}`;
     const oTPHandler = new OTPHandler();
     const res = await oTPHandler.sendSmsOTP(phone, message);
     return res;
@@ -97,7 +118,7 @@ export default class UserService implements IUserService {
   async verifyOTP(phone: string, otp: number): Promise<boolean> {
     await UserPolicy.ensureCanGetOTP(this.UserRepository, phone);
     const profile = await this.UserRepository.getUserByPhone(phone);
-    
+
     if (otp == profile?.otp)
       await this.UserRepository.updateUser(profile._id as string, {
         verifiedUser: true,
@@ -192,5 +213,32 @@ export default class UserService implements IUserService {
     const user = await this.UserRepository.getUserById(id);
     if (!user) throw new AppError(StatusCodes.NOT_FOUND, "user not found");
     return user;
+  }
+
+  async assignCommitteeDesignation(
+    userId: string,
+    designation: string,
+    committee: string
+  ): Promise<IUserDocument> {
+    const existingCommittee = await LocationCommitteePolicty.ensureCommittee(
+      this.CommitteeRepository,
+      committee
+    );
+    const assignedDesignation = await DesignationPolicy.ensureDesignnation(
+      this.DesignationRepository,
+      designation
+    );
+
+    if (existingCommittee.president && assignedDesignation.level == 1)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        "committee already has a president"
+      );
+
+    await UserPolicy.ensureUserExistance(this.UserRepository, userId);
+    return await this.UserRepository.updateUser(userId, {
+      assignedPosition: designation,
+      assignedCommittee: committee,
+    });
   }
 }

@@ -1,5 +1,9 @@
 import mongoose from "mongoose";
-import { ApproveStatus, DatabaseNames, UserRoles } from "../../shared/utils/enums";
+import {
+  ApproveStatus,
+  DatabaseNames,
+  UserRoles,
+} from "../../shared/utils/enums";
 
 export interface IUser {
   fullName: string;
@@ -15,7 +19,8 @@ export interface IUser {
   union: string;
   ward: string;
   requestedPosition: string;
-  assignedPosition: mongoose.Schema.Types.ObjectId;
+  assignedPosition: mongoose.Schema.Types.ObjectId | string;
+  assignedCommittee: mongoose.Schema.Types.ObjectId | string;
   inspiration: string;
   role: string;
   accountStatus?: ApproveStatus;
@@ -35,7 +40,7 @@ const userSchema = new mongoose.Schema<IUserDocument>(
     fullName: { type: String, required: true },
     email: { type: String, required: true, unique: true },
     phone: { type: String, required: true, unique: true },
-    avatar: { type: String},
+    avatar: { type: String },
     password: { type: String, required: true },
     dob: { type: Date, required: true },
     division: { type: String, required: true },
@@ -48,6 +53,11 @@ const userSchema = new mongoose.Schema<IUserDocument>(
     assignedPosition: {
       type: mongoose.Schema.Types.ObjectId,
       ref: DatabaseNames.Designation,
+      default: null,
+    },
+    assignedCommittee: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: DatabaseNames.Committee,
       default: null,
     },
     role: { type: String, enum: UserRoles, default: UserRoles.User },

@@ -13,7 +13,10 @@ export interface IUserRepository {
   getAllUsers(
     query: Record<string, unknown>
   ): Promise<{ users: IUserDocument[]; pagination: IPagination }>;
-  getUsersByStatus(status: string, query: Record<string, unknown>): Promise<{pagination: IPagination, users: IUserDocument[]}>;
+  getUsersByStatus(
+    status: string,
+    query: Record<string, unknown>
+  ): Promise<{ pagination: IPagination; users: IUserDocument[] }>;
 }
 
 export default class UserRepository implements IUserRepository {
@@ -40,7 +43,10 @@ export default class UserRepository implements IUserRepository {
   }
 
   async updateUser(id: string, data: Partial<IUser>): Promise<IUserDocument> {
-    const updated = await this.Model.findByIdAndUpdate(id, data, { new: true }).select("-password -otp");
+    const updated = await this.Model.findByIdAndUpdate(id, data, { new: true })
+      .select("-password -otp")
+      .populate("assignedCommittee", "title")
+      .populate("assignedPosition", "title");
     if (!updated)
       throw new AppError(StatusCodes.NOT_FOUND, `User with id ${id} not found`);
     return updated;
@@ -63,12 +69,14 @@ export default class UserRepository implements IUserRepository {
     return { users, pagination };
   }
 
-  async getUsersByStatus(status: string, query: Record<string, unknown>): Promise<{ pagination: IPagination; users: IUserDocument[] }> {
+  async getUsersByStatus(
+    status: string,
+    query: Record<string, unknown>
+  ): Promise<{ pagination: IPagination; users: IUserDocument[] }> {
     const qb = new QueryBuilder(this.Model, query);
-    const rse = qb.find({accountStatus: status}).sort().paginate();
+    const rse = qb.find({ accountStatus: status }).sort().paginate();
     const users = await rse.exec();
     const pagination = await rse.countTotal();
     return { users, pagination };
   }
-  
 }

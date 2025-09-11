@@ -26,6 +26,16 @@ export function isVideoFile(filename: string): boolean {
   return ext ? videoExtensions.includes(`.${ext}`) : false;
 }
 
+export function checkFieldsExistence(fields: Record<string, any>) {
+  for (const [fieldName, value] of Object.entries(fields)) {
+    if (value === undefined || value === null || value === "") {
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `${fieldName} is required`
+      );
+    }
+  }
+}
 
 export function otpStatusCodeToMessage(code: number): string {
   switch (code) {

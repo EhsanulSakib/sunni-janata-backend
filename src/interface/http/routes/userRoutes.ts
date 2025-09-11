@@ -6,11 +6,20 @@ import UserController from "../controller/userController";
 import { upload } from "../middlewares/multer";
 import { UserRoles } from "../../../shared/utils/enums";
 import { authenticate } from "../middlewares/auth_middleware";
+import LocationRepository from "../../../infrastructure/repositories/locationRepository";
+import LocationModel from "../../../infrastructure/db/locationModel";
+import CommitteeRepository from "../../../infrastructure/repositories/committeeRepository";
+import CommitteeModel from "../../../infrastructure/db/committeeModel";
+import DesignationRepository from "../../../infrastructure/repositories/designationRepository";
+import DesignationModel from "../../../infrastructure/db/designationModel";
 
 const router = expreee.Router();
 
 const userRepository = new UserRepository(UserModel);
-const service = new UserService(userRepository);
+const location = new LocationRepository(LocationModel);
+const committee = new CommitteeRepository(CommitteeModel);
+const designation = new DesignationRepository(DesignationModel);
+const service = new UserService(userRepository, location, committee, designation);
 const controller = new UserController(service);
 
 // used to register a form
@@ -38,22 +47,8 @@ router.route("/forget-password").post(controller.forgetPassword);
 
 router.route("/my-profile").get(authenticate([UserRoles.User]), controller.getMyProfile);
 router.route("/profile/:id").get(authenticate(), controller.getProfileWithId);
-// // send edit requests
-// router.route("/request-edit").post();
-// //get profile info
-// router.route("/profile").get();
-// // send message to admin
-// router.route("/contact").post();
 
-// // get all committeess
-// router.route("/committees").get();
-// // get committee details
-// router.route("/committees/:id").get();
-// // get committees with locations
+router.route("/assign-committee-designation/:userId").put(authenticate([UserRoles.Admin]), controller.assignCommitteeDesignation);
 
-// // get all notifications
-// router.route("/notifications").get();
-// // get notification details
-// router.route("/notifications/:id").post();
 
 export default router;

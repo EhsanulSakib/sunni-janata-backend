@@ -13,6 +13,7 @@ import sendResponse from "../../../shared/utils/send_response";
 import { StatusCodes } from "http-status-codes";
 import { Query } from "mongoose";
 import { ApproveStatus } from "../../../shared/utils/enums";
+import { checkFieldsExistence } from "../../../shared/utils/helper_functions";
 
 export default class UserController {
   Service: IUserService;
@@ -144,4 +145,19 @@ export default class UserController {
       result: result,
     });
   });
+
+  assignCommitteeDesignation = catchAsync(async (req: Request, res: Response) => {
+    const {userId} = req.params
+    const {designation, committee} = req.body;
+    checkFieldsExistence({designation, committee});
+    const result = await this.Service.assignCommitteeDesignation(userId, designation, committee);
+    sendResponse(res, {
+      success: true,
+      statusCode: StatusCodes.OK,
+      message: `User assigned to committee and designation successfully`,
+      result: result,
+    });
+    
+  });
+  
 }

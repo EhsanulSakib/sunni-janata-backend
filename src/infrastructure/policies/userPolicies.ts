@@ -52,4 +52,10 @@ export class UserPolicy {
       throw new AppError(StatusCodes.BAD_REQUEST, `user with ${phone} is not verified`);
     return user;
   }
+  
+  static async ensureUserExistance(UserRepository: IUserRepository, id: string) {
+    const user = await UserRepository.getUserById(id);
+    if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
+    return user;
+  }
 }
