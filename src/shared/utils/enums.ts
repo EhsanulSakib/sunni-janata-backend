@@ -26,6 +26,7 @@ export enum CommitteeType {
   Student = "student",
   Youth = "youth",
   Females = "females",
+  Central = 'central'
 }
 
 
