@@ -141,10 +141,45 @@ export default class CommitteeLocationController {
   })
 
   updateCommitteeInformation = catchAsync(async (req: Request, res: Response) => {
-    throw new Error("not implemented");
+    const { comId } = req.params;
+    const {
+      title,
+      description,
+      address,
+    } = req.body;
+    const result = await this.Service.updateCommittee(comId, {
+      title,
+      description,
+      address,
+    });
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Committee information updated successfully",
+      result: result,
+    });
   });
 
   getCommitteeDetails = catchAsync(async (req: Request, res: Response) => {
-    throw new Error("not implemented");
+    const { comId } = req.params;
+    const result = await this.Service.getCommitteeDetails(comId);
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Committee details fetched successfully",
+      result: result,
+    });
+  });
+
+  changePresident = catchAsync(async (req: Request, res: Response) => {
+    const { comId } = req.params;
+    const { newPresident } = req.body;
+    const result = await this.Service.changePresident(comId, newPresident);
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "President changed successfully",
+      result: result,
+    });
   });
 }

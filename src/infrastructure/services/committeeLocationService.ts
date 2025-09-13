@@ -21,8 +21,19 @@ export interface ICommitteeLocationService {
   ): Promise<ILocation | null>;
   deleteLocation(id: string): Promise<DeleteResult>;
   createCommittee(committee: ICommittee): Promise<ICommitteeDocument>;
-  getCommittees(query: Record<string, unknown>): Promise<{pagination: IPagination, committees: ICommitteeDocument[]}>;
+  getCommittees(
+    query: Record<string, unknown>
+  ): Promise<{ pagination: IPagination; committees: ICommitteeDocument[] }>;
   disbandCommittee(id: string): Promise<ICommitteeDocument>;
+  getCommitteeDetails(id: string): Promise<ICommitteeDocument>;
+  changePresident(
+    id: string,
+    newPresident: string
+  ): Promise<ICommitteeDocument>;
+  updateCommittee(
+    id: string,
+    committee: Partial<ICommittee>
+  ): Promise<ICommitteeDocument>;
 }
 
 export default class CommitteeLocationService
@@ -37,7 +48,7 @@ export default class CommitteeLocationService
     locationRepository: ILocationRepository,
     committeeRepository: ICommitteeRepository,
     userRepository: IUserRepository,
-    designationRepository: IDesignationRepository,
+    designationRepository: IDesignationRepository
   ) {
     this.LocationRepository = locationRepository;
     this.CommitteeRepository = committeeRepository;
@@ -104,26 +115,103 @@ export default class CommitteeLocationService
   }
 
   async createCommittee(committee: ICommittee): Promise<ICommitteeDocument> {
-    const user = await UserPolicy.ensureUserExistance(this.UserRepository, committee.president as string);
-    const designation = await this.DesignationRepository.getDesignationById(user.assignedPosition as string);
+    const user = await UserPolicy.ensureUserExistance(
+      this.UserRepository,
+      committee.president as string
+    );
+    const designation = await this.DesignationRepository.getDesignationById(
+      user.assignedPosition as string
+    );
     if (designation && designation.level == 1)
-      throw new AppError(StatusCodes.BAD_REQUEST, `${user.fullName} is already a president`);
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `${user.fullName} is already a president`
+      );
     const newCommittee = await this.CommitteeRepository.create(committee);
     const presidentId = await this.DesignationRepository.getPresidentId();
-    await this.UserRepository.updateUser(user._id as string, {assignedCommittee: newCommittee._id as string, assignedPosition: presidentId});
+    await this.UserRepository.updateUser(user._id as string, {
+      assignedCommittee: newCommittee._id as string,
+      assignedPosition: presidentId,
+    });
     return newCommittee;
   }
 
-  async getCommittees(query: Record<string, unknown>): Promise<{ pagination: IPagination; committees: ICommitteeDocument[]; }> {
+  async getCommittees(
+    query: Record<string, unknown>
+  ): Promise<{ pagination: IPagination; committees: ICommitteeDocument[] }> {
     const committees = await this.CommitteeRepository.getCommittee(query);
     return committees;
   }
 
   async disbandCommittee(id: string): Promise<ICommitteeDocument> {
-    await LocationCommitteePolicty.ensureCommittee(this.CommitteeRepository, id);
+    await LocationCommitteePolicty.ensureCommittee(
+      this.CommitteeRepository,
+      id
+    );
     // removing all the members associated with the community
-    const removedPosition = await this.UserRepository.updateMany({assignedCommittee: id}, {assignedCommittee: null, assignedPosition: null});
+    const removedPosition = await this.UserRepository.updateMany(
+      { assignedCommittee: id },
+      { assignedCommittee: null, assignedPosition: null }
+    );
     const deletedCommittee = await this.CommitteeRepository.delete(id);
     return deletedCommittee;
+  }
+
+  async getCommitteeDetails(id: string): Promise<ICommitteeDocument> {
+    await LocationCommitteePolicty.ensureCommittee(
+      this.CommitteeRepository,
+      id
+    );
+    return await this.CommitteeRepository.getCommitteeDetails(id);
+  }
+
+  async changePresident(
+    id: string,
+    newPresident: string
+  ): Promise<ICommitteeDocument> {
+    const existingCommittee = await LocationCommitteePolicty.ensureCommittee(
+      this.CommitteeRepository,
+      id
+    );
+    const newPres = await UserPolicy.ensureUserExistance(
+      this.UserRepository,
+      newPresident
+    );
+    const prevDesignation = await this.DesignationRepository.getDesignationById(
+      newPres.assignedPosition as string
+    );
+    if (prevDesignation && prevDesignation.level == 1)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `${newPres.fullName} is already a president`
+      );
+
+    await this.UserRepository.updateUser(
+      existingCommittee.president as string,
+      {
+        assignedCommittee: null,
+        assignedPosition: null,
+      }
+    );
+
+    await this.UserRepository.updateUser(newPresident, {
+      assignedCommittee: id,
+      assignedPosition: await this.DesignationRepository.getPresidentId(),
+    });
+
+    return await this.CommitteeRepository.update(id, {
+      president: newPresident,
+    });
+  }
+
+  async updateCommittee(
+    id: string,
+    committee: Partial<ICommittee>
+  ): Promise<ICommitteeDocument> {
+    await LocationCommitteePolicty.ensureCommittee(
+      this.CommitteeRepository,
+      id
+    );
+    return await this.CommitteeRepository.update(id, committee);
   }
 }

@@ -48,6 +48,7 @@ router
 router
   .route("/committee/:comId")
   .get(controller.getCommitteeDetails)
+  .post(authenticate([UserRoles.Admin]), controller.changePresident)
   .put(authenticate([UserRoles.Admin]), controller.updateCommitteeInformation)
   .delete(authenticate([UserRoles.Admin]), controller.disbandCommittee);
 
