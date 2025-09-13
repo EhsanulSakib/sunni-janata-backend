@@ -75,8 +75,7 @@ app.use("/api/v1/committee-location", CommitteeLocationRouter);
 app.use(globalErrorHandler);
 
 const PORT = process.env.PORT || 5000;
-const MONGOURL =
-  process.env.MONGO_URL || "mongodb://localhost:27017/miniecoomerce";
+const MONGOURL = process.env.MONGO_URL!;
 
 mongoose.connect(MONGOURL).then(() => {
   console.log("DB Connected");
