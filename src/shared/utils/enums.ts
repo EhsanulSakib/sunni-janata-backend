@@ -5,6 +5,7 @@ export enum DatabaseNames {
   Location = "locations",
   Committee = "committees",
   Designation = "designations",
+  President = "presidents",
 }
 
 export enum LocationLevels {

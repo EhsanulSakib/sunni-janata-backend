@@ -2,6 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import { IUser, IUserDocument } from "../db/userModel";
 import { IUserRepository } from "../repositories/userRepository";
 import AppError from "../../shared/errors/app_errors";
+import { ApproveStatus } from "../../shared/utils/enums";
 
 export class UserPolicy {
   static async ensureUserCanRegister(
@@ -18,14 +19,14 @@ export class UserPolicy {
     if (existingPhone)
       await UserRepository.deleteUser(existingPhone._id as string); // deleting garbage requests
     // checking for unique email
-    const existingEmail = await UserRepository.getUserByEmail(data.email!);
-    if (existingEmail && existingEmail.verifiedUser)
-      throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        `${data.email} is already registered`
-      );
-    if (existingEmail)
-      await UserRepository.deleteUser(existingEmail._id as string); // deleting garbage requests
+    // const existingEmail = await UserRepository.getUserByEmail(data.email!);
+    // if (existingEmail && existingEmail.verifiedUser)
+    //   throw new AppError(
+    //     StatusCodes.BAD_REQUEST,
+    //     `${data.email} is already registered`
+    //   );
+    // if (existingEmail)
+    //   await UserRepository.deleteUser(existingEmail._id as string); // deleting garbage requests
   }
 
   static async ensureCanGetOTP(UserRepository: IUserRepository, phone: string){
@@ -50,6 +51,9 @@ export class UserPolicy {
     if (!user) throw new AppError(StatusCodes.BAD_REQUEST, `an account with ${phone} is not registered`);
     if (!user.verifiedUser)
       throw new AppError(StatusCodes.BAD_REQUEST, `user with ${phone} is not verified`);
+
+    if(user.accountStatus !== ApproveStatus.Approved)
+      throw new AppError(StatusCodes.BAD_REQUEST, `user with ${phone} is not approved`);
     return user;
   }
   
