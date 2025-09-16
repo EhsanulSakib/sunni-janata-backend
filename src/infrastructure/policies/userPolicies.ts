@@ -29,35 +29,54 @@ export class UserPolicy {
     //   await UserRepository.deleteUser(existingEmail._id as string); // deleting garbage requests
   }
 
-  static async ensureCanGetOTP(UserRepository: IUserRepository, phone: string){
+  static async ensureCanGetOTP(UserRepository: IUserRepository, phone: string) {
     const existingUser = await UserRepository.getUserByPhone(phone);
     if (!existingUser)
-        throw new AppError(
-        StatusCodes.BAD_REQUEST,
-        `${phone} is not registered`
-      );
-
+      throw new AppError(StatusCodes.BAD_REQUEST, `${phone} is not registered`);
   }
 
-  static async ensureUpdateProfile(UserRepository: IUserRepository, id: string) {
+  static async ensureUpdateProfile(
+    UserRepository: IUserRepository,
+    id: string
+  ) {
     const existingUser = await UserRepository.getUserById(id);
-    if(!existingUser?.verifiedUser)
-      throw new AppError(StatusCodes.BAD_REQUEST, `account with _id -> ${id} is not verified`);
-    if (!existingUser)throw new AppError(StatusCodes.BAD_REQUEST, `account with _id -> ${id} does not exists`);
+    if (!existingUser?.verifiedUser)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `account with _id -> ${id} is not verified`
+      );
+    if (!existingUser)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `account with _id -> ${id} does not exists`
+      );
   }
 
   static async ensureUserLogin(UserRepository: IUserRepository, phone: string) {
     const user = await UserRepository.getUserByPhone(phone);
-    if (!user) throw new AppError(StatusCodes.BAD_REQUEST, `an account with ${phone} is not registered`);
+    if (!user)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `an account with ${phone} is not registered`
+      );
     if (!user.verifiedUser)
-      throw new AppError(StatusCodes.BAD_REQUEST, `user with ${phone} is not verified`);
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `user with ${phone} is not verified`
+      );
 
-    if(user.accountStatus !== ApproveStatus.Approved)
-      throw new AppError(StatusCodes.BAD_REQUEST, `user with ${phone} is not approved`);
+    if (user.accountStatus !== ApproveStatus.Approved)
+      throw new AppError(
+        StatusCodes.BAD_REQUEST,
+        `user with ${phone} is not approved`
+      );
     return user;
   }
-  
-  static async ensureUserExistance(UserRepository: IUserRepository, id: string): Promise<IUserDocument> {
+
+  static async ensureUserExistance(
+    UserRepository: IUserRepository,
+    id: string
+  ): Promise<IUserDocument> {
     const user = await UserRepository.getUserById(id);
     if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
     return user;

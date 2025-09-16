@@ -31,12 +31,16 @@ router.route("/request-otp").post(controller.requestOtp);
 
 router.route("/otp-verify").post(controller.verifyOtp);
 
+router.route("/delete-user/:id").delete(authenticate([UserRoles.Admin]), controller.deleteUserById);
+
 router
   .route("/account-status/:id")
   .put(authenticate([UserRoles.Admin]), controller.updateAccountStatus);
+  
 router
   .route("/account-status/:status")
   .get(authenticate([UserRoles.Admin]), controller.getAccountsByStatus);
+
 // // login
 router.route("/login").post(controller.loginUser);
 

@@ -45,7 +45,10 @@ export function validateLogin(body: Record<string, any>) {
 export function validateStatus(status: any) {
   if (!status)
     throw new AppError(StatusCodes.BAD_REQUEST, "filed status is required");
-  if (!Object.values(ApproveStatus).includes(status as ApproveStatus))
+  if (
+    !Object.values(ApproveStatus).includes(status as ApproveStatus) &&
+    status !== "not-assigned"
+  )
     throw new AppError(
       StatusCodes.BAD_REQUEST,
       `${status} is not a valid status`

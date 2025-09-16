@@ -1,18 +1,16 @@
 import { Request, Response } from "express";
 import catchAsync from "../../../shared/utils/catch_async";
-import { IUser } from "../../../infrastructure/db/userModel";
 import { IUserService } from "../../../infrastructure/services/userService";
 import {
   validateAccountRequest,
   validateChangePassword,
   validateForgetPassword,
   validateLogin,
-  validateStatus,
+  validateStatus
 } from "../validators/validateUsers";
 import sendResponse from "../../../shared/utils/send_response";
 import { StatusCodes } from "http-status-codes";
-import { Query } from "mongoose";
-import { ApproveStatus } from "../../../shared/utils/enums";
+import { ApproveStatus, DatabaseNames } from "../../../shared/utils/enums";
 import { checkFieldsExistence } from "../../../shared/utils/helper_functions";
 
 export default class UserController {
@@ -28,7 +26,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: "Registration request sent successfully",
-      result: result,
+      result: result
     });
   });
 
@@ -40,7 +38,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `OTP sent successfully sent to ${phone} number`,
-      result: result,
+      result: result
     });
   });
 
@@ -53,7 +51,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `OTP verified successfully`,
-      result: result,
+      result: result
     });
   });
 
@@ -68,7 +66,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `User status updated to ${status} successfully`,
-      result: result,
+      result: result
     });
   });
 
@@ -83,7 +81,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `Users with status ${status} fetched successfully`,
-      result: result,
+      result: result
     });
   });
 
@@ -96,7 +94,7 @@ export default class UserController {
       statusCode: StatusCodes.OK,
       message: `User logged in successfully`,
       result: result,
-      access_token: token,
+      access_token: token
     });
   });
   changePassword = catchAsync(async (req: Request, res: Response) => {
@@ -111,7 +109,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `Password changed successfully`,
-      result: result,
+      result: result
     });
   });
   forgetPassword = catchAsync(async (req: Request, res: Response) => {
@@ -122,7 +120,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `Password changed successfully`,
-      result: result,
+      result: result
     });
   });
 
@@ -132,7 +130,7 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `Profile fetched successfully`,
-      result: result,
+      result: result
     });
   });
 
@@ -142,22 +140,37 @@ export default class UserController {
       success: true,
       statusCode: StatusCodes.OK,
       message: `Profile fetched successfully`,
-      result: result,
+      result: result
     });
   });
 
-  assignCommitteeDesignation = catchAsync(async (req: Request, res: Response) => {
-    const {userId} = req.params
-    const {designation, committee} = req.body;
-    checkFieldsExistence({designation, committee});
-    const result = await this.Service.assignCommitteeDesignation(userId, designation, committee);
+  deleteUserById = catchAsync(async (req: Request, res: Response) => {
+    const { id } = req.params;
+    const result = await this.Service.deleteUserById(req.params.id);
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
-      message: `User assigned to committee and designation successfully`,
-      result: result,
+      message: `User deleted successfully`,
+      result: result
     });
-    
   });
-  
+
+  assignCommitteeDesignation = catchAsync(
+    async (req: Request, res: Response) => {
+      const { userId } = req.params;
+      const { designation, committee } = req.body;
+      checkFieldsExistence({ designation, committee });
+      const result = await this.Service.assignCommitteeDesignation(
+        userId,
+        designation,
+        committee
+      );
+      sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: `User assigned to committee and designation successfully`,
+        result: result
+      });
+    }
+  );
 }

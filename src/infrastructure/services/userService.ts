@@ -37,6 +37,9 @@ export interface IUserService {
     status: ApproveStatus,
     query: Record<string, any>
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }>;
+
+  deleteUserById(id: string): Promise<IUserDocument>;
+
   userLogin(
     phone: string,
     password: string
@@ -138,11 +141,16 @@ export default class UserService implements IUserService {
   }
 
   async getUsersByStatus(
-    status: ApproveStatus,
+    status: ApproveStatus | "not-assigned",
     query: Record<string, any>
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }> {
     const result = await this.UserRepository.getUsersByStatus(status, query);
     return result;
+  }
+
+  async deleteUserById(id: string): Promise<IUserDocument> {
+    await UserPolicy.ensureUserExistance(this.UserRepository, id);
+    return await this.UserRepository.deleteUser(id);
   }
 
   async userLogin(
