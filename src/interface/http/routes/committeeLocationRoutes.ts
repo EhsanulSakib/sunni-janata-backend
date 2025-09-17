@@ -1,5 +1,4 @@
 import express from "express";
-import { AutoEncryptionLoggerLevel } from "mongodb";
 import { authenticate } from "../middlewares/auth_middleware";
 import { UserRoles } from "../../../shared/utils/enums";
 import CommitteeRepository from "../../../infrastructure/repositories/committeeRepository";

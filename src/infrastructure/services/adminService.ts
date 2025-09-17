@@ -27,7 +27,6 @@ export interface IAdminService {
   deleteDesignation(id: string): Promise<IDesignationDocument>;
   getAllDesignation(): Promise<IDesignationDocument[]>;
   getDesignationById(id: string): Promise<IDesignationDocument>;
-
 }
 
 export default class AdminService implements IAdminService {
@@ -84,7 +83,7 @@ export default class AdminService implements IAdminService {
       Number(process.env.SALT_ROUND || 5)
     );
     return await this.Repository.findByIdAndUpdate(admin._id as string, {
-      password: hashedPassword,
+      password: hashedPassword
     });
   }
 
@@ -101,6 +100,16 @@ export default class AdminService implements IAdminService {
     return await this.DesignationRepository.updateDesgination(id, data);
   }
 
+  async getDesignationByLevel(level: number): Promise<IDesignationDocument> {
+    const designation = await this.DesignationRepository.getDesignationByLevel(
+      level
+    );
+
+    if (!designation)
+      throw new AppError(StatusCodes.NOT_FOUND, "Designation not found");
+    return designation;
+  }
+
   async deleteDesignation(id: string): Promise<IDesignationDocument> {
     return await this.DesignationRepository.deleteDesignation(id);
   }
@@ -113,5 +122,4 @@ export default class AdminService implements IAdminService {
       throw new AppError(StatusCodes.NOT_FOUND, "Designation not found");
     return designation;
   }
-  
 }

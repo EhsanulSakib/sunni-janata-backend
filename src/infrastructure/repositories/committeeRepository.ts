@@ -3,7 +3,7 @@ import AppError from "../../shared/errors/app_errors";
 import {
   ICommittee,
   ICommitteeDocument,
-  ICommitteeModel,
+  ICommitteeModel
 } from "../db/committeeModel";
 import { IPagination, QueryBuilder } from "../../shared/utils/query_builder";
 import { Types } from "mongoose";
@@ -53,7 +53,7 @@ export default class CommitteeRepository implements ICommitteeRepository {
     committee: Partial<ICommittee>
   ): Promise<ICommitteeDocument> {
     const updated = await this.Model.findByIdAndUpdate(id, committee, {
-      new: true,
+      new: true
     })
       .populate("location", "title")
       .populate("president", "fullName avatar email");
@@ -68,22 +68,102 @@ export default class CommitteeRepository implements ICommitteeRepository {
   async getCommittee(
     query: Record<string, unknown>
   ): Promise<{ pagination: IPagination; committees: ICommitteeDocument[] }> {
-    let filter: { parentLocation?: string | null; location?: string } = {};
-    if ("parentLocation" in query) {
-      filter.parentLocation =
-        (query.parentLocation as string) == ""
-          ? null
-          : (query.parentLocation as string);
-    }
-    if ("location" in query && query.location != undefined) {
-      filter.location = query.location as string;
-    }
-    console.log(filter);
+    const pipeline = [];
 
+    // Build match stage for filtering
+    let match: any = {};
+    if (query.location && typeof query.location === "string") {
+      match.location = new Types.ObjectId(query.location);
+    }
+    if (
+      query.title &&
+      typeof query.title === "string" &&
+      query.title.trim() !== ""
+    ) {
+      match.title = { $regex: new RegExp(query.title.trim(), "i") };
+    }
+    if (Object.keys(match).length > 0) {
+      pipeline.push({ $match: match });
+    }
+
+    console.log("Committee aggregation match:", match);
+
+    // Lookup for president
+    pipeline.push({
+      $lookup: {
+        from: DatabaseNames.User,
+        localField: "president",
+        foreignField: "_id",
+        as: "presidentDetails"
+      }
+    });
+
+    // Lookup for location
+    pipeline.push({
+      $lookup: {
+        from: DatabaseNames.Location,
+        localField: "location",
+        foreignField: "_id",
+        as: "locationDetails"
+      }
+    });
+
+    // Lookup for parentLocation
+    pipeline.push({
+      $lookup: {
+        from: DatabaseNames.Location,
+        localField: "parentLocation",
+        foreignField: "_id",
+        as: "parentLocationDetails"
+      }
+    });
+
+    // Unwind president, location, and parentLocation
+    pipeline.push({
+      $unwind: {
+        path: "$presidentDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    });
+    pipeline.push({
+      $unwind: {
+        path: "$locationDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    });
+    pipeline.push({
+      $unwind: {
+        path: "$parentLocationDetails",
+        preserveNullAndEmptyArrays: true
+      }
+    });
+
+    // Project fields
+    pipeline.push({
+      $project: {
+        title: 1,
+        type: 1,
+        description: 1,
+        address: 1,
+        location: 1,
+        parentLocation: 1,
+        president: 1,
+        "presidentDetails.fullName": 1,
+        "presidentDetails.avatar": 1,
+        "presidentDetails.email": 1,
+        "locationDetails.title": 1,
+        "parentLocationDetails.title": 1,
+        createdAt: 1,
+        updatedAt: 1
+      }
+    });
+
+    // Apply sorting and pagination using QueryBuilder
     const qb = new QueryBuilder(this.Model, query);
-    const res = qb.find(filter).sort().paginate();
+    const res = qb.aggregate(pipeline).sort().paginate();
     const committees = await res.exec();
     const pagination = await res.countTotal();
+
     return { committees, pagination };
   }
 
@@ -91,8 +171,8 @@ export default class CommitteeRepository implements ICommitteeRepository {
     const pipeline = [];
     const match = {
       $match: {
-        _id: new Types.ObjectId(id),
-      },
+        _id: new Types.ObjectId(id)
+      }
     };
 
     const addPresidentLookup = {
@@ -100,16 +180,16 @@ export default class CommitteeRepository implements ICommitteeRepository {
         from: DatabaseNames.User,
         localField: "president",
         foreignField: "_id",
-        as: "President",
-      },
+        as: "President"
+      }
     };
     const addLocationLookup = {
       $lookup: {
         from: DatabaseNames.Location,
         localField: "location",
         foreignField: "_id",
-        as: "location",
-      },
+        as: "location"
+      }
     };
     const addMembersLookup = {
       $lookup: {
@@ -118,22 +198,22 @@ export default class CommitteeRepository implements ICommitteeRepository {
         pipeline: [
           {
             $match: {
-              $expr: { $eq: ["$assignedCommittee", "$$committeeId"] },
-            },
+              $expr: { $eq: ["$assignedCommittee", "$$committeeId"] }
+            }
           },
           {
             $lookup: {
               from: DatabaseNames.Designation, // Assuming this is your position collection name
               localField: "assignedPosition",
               foreignField: "_id",
-              as: "position",
-            },
+              as: "position"
+            }
           },
           {
             $unwind: {
               path: "$position",
-              preserveNullAndEmptyArrays: true,
-            },
+              preserveNullAndEmptyArrays: true
+            }
           },
           {
             $group: {
@@ -143,10 +223,10 @@ export default class CommitteeRepository implements ICommitteeRepository {
                   _id: "$_id",
                   fullName: "$fullName",
                   avatar: "$avatar",
-                  email: "$email", // Add other fields you need
-                },
-              },
-            },
+                  email: "$email" // Add other fields you need
+                }
+              }
+            }
           },
           {
             $group: {
@@ -154,40 +234,40 @@ export default class CommitteeRepository implements ICommitteeRepository {
               members: {
                 $push: {
                   k: "$_id",
-                  v: "$users",
-                },
-              },
-            },
+                  v: "$users"
+                }
+              }
+            }
           },
           {
             $replaceRoot: {
-              newRoot: { $arrayToObject: "$members" },
-            },
-          },
+              newRoot: { $arrayToObject: "$members" }
+            }
+          }
         ],
-        as: "membersByPosition",
-      },
+        as: "membersByPosition"
+      }
     };
 
     const unwind = [
       {
         $unwind: {
           path: "$President",
-          preserveNullAndEmptyArrays: true,
-        },
+          preserveNullAndEmptyArrays: true
+        }
       },
       {
         $unwind: {
           path: "$location",
-          preserveNullAndEmptyArrays: true,
-        },
+          preserveNullAndEmptyArrays: true
+        }
       },
       {
         $unwind: {
           path: "$membersByPosition",
-          preserveNullAndEmptyArrays: true,
-        },
-      },
+          preserveNullAndEmptyArrays: true
+        }
+      }
     ];
 
     const project = {
@@ -198,8 +278,8 @@ export default class CommitteeRepository implements ICommitteeRepository {
         address: 1,
         "location.title": 1,
         "President.fullName": 1,
-        "President.avatar": 1,
-      },
+        "President.avatar": 1
+      }
     };
 
     pipeline.push(match);
@@ -212,17 +292,4 @@ export default class CommitteeRepository implements ICommitteeRepository {
     const details = await this.Model.aggregate(pipeline);
     return details[0];
   }
-
-
-  // async getCommittee(parentLocation: string | null): Promise<ICommitteeDocument[]> {
-
-  // }
-
-  // async update(id: string, committee: Partial<ICommittee>): Promise<ICommitteeDocument> {
-
-  // }
-
-  // async getById(id: string): Promise<ICommitteeDocument> {
-
-  // }
 }

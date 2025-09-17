@@ -1,4 +1,5 @@
 import { ICommitteeService } from "../../../infrastructure/services/committeeService";
+import { IUserService } from "../../../infrastructure/services/userService"; // Import interface
 import catchAsync from "../../../shared/utils/catch_async";
 import { Request, Response } from "express";
 import sendResponse from "../../../shared/utils/send_response";
@@ -6,9 +7,11 @@ import { validateCreateCommittee } from "../validators/validateCommitteeLocation
 
 export default class CommitteeController {
   Service: ICommitteeService;
+  UserService: IUserService;
 
-  constructor(service: ICommitteeService) {
+  constructor(service: ICommitteeService, userService: IUserService) {
     this.Service = service;
+    this.UserService = userService; // Initialize UserService instance
   }
 
   getCommittees = catchAsync(async (req: Request, res: Response) => {
@@ -34,9 +37,42 @@ export default class CommitteeController {
   });
 
   createCommittee = catchAsync(async (req: Request, res: Response) => {
+    console.log("POST /committee request body:", req.body); // Log request body
     validateCreateCommittee(req.body);
     const committee = await this.Service.createCommittee(req.body);
-    
+    if (!committee) {
+      return sendResponse(res, {
+        success: false,
+        statusCode: 400,
+        message: "Failed to create committee",
+        result: null
+      });
+    }
+
+    const designation = await this.UserService.getDesignationByLevel(1);
+    if (!designation) {
+      return sendResponse(res, {
+        success: false,
+        statusCode: 400,
+        message: "Failed to assign committee designation",
+        result: null
+      });
+    }
+
+    const user = await this.UserService.assignCommitteeDesignation(
+      req.body.president,
+      designation._id as string,
+      committee._id
+    );
+    if (!user) {
+      return sendResponse(res, {
+        success: false,
+        statusCode: 400,
+        message: "Failed to assign committee designation",
+        result: null
+      });
+    }
+
     sendResponse(res, {
       success: true,
       statusCode: 200,

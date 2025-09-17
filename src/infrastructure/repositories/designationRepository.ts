@@ -13,6 +13,7 @@ export interface IDesignationRepository {
   ): Promise<IDesignationDocument>;
   deleteDesignation(id: string): Promise<IDesignationDocument>;
   getDesignationById(id: string): Promise<IDesignationDocument | null>;
+  getDesignationByLevel(level: number): Promise<IDesignationDocument | null>;
   getAllDesignations(): Promise<IDesignationDocument[]>;
   findByName(name: string): Promise<IDesignationDocument | null>;
   getPresidentId(): Promise<string>;
@@ -53,6 +54,10 @@ export default class DesignationRepository implements IDesignationRepository {
 
   async getDesignationById(id: string): Promise<IDesignationDocument | null> {
     return await this.Model.findById(id);
+  }
+
+  async getDesignationByLevel(level: number): Promise<IDesignationDocument | null> {
+    return await this.Model.findOne({ level });
   }
 
   async getAllDesignations(): Promise<IDesignationDocument[]> {

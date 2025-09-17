@@ -21,6 +21,7 @@ import { ICommitteeRepository } from "../repositories/committeeRepository";
 import { LocationCommitteePolicty } from "../policies/locationCommitteePolicy";
 import { IDesignationRepository } from "../repositories/designationRepository";
 import DesignationPolicy from "../policies/designationPolicy";
+import { IDesignationDocument } from "../db/designationModel";
 
 export interface IUserService {
   requestRegistration(
@@ -37,6 +38,8 @@ export interface IUserService {
     status: ApproveStatus,
     query: Record<string, any>
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }>;
+
+  getDesignationByLevel(level: number): Promise<IDesignationDocument>;
 
   deleteUserById(id: string): Promise<IUserDocument>;
 
@@ -146,6 +149,16 @@ export default class UserService implements IUserService {
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }> {
     const result = await this.UserRepository.getUsersByStatus(status, query);
     return result;
+  }
+
+  async getDesignationByLevel(level: number): Promise<IDesignationDocument> {
+    const designation = await this.DesignationRepository.getDesignationByLevel(
+      level
+    );
+
+    if (!designation)
+      throw new AppError(StatusCodes.NOT_FOUND, "Designation not found");
+    return designation;
   }
 
   async deleteUserById(id: string): Promise<IUserDocument> {
