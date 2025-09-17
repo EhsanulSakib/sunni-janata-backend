@@ -19,7 +19,7 @@ const locationSchema = new mongoose.Schema<ILocationDocument>(
     title: {
       type: String,
       required: true,
-      unique: true,
+      // unique: true,
     },
     level: {
       type: String,

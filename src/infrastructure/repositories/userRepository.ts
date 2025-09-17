@@ -85,6 +85,7 @@ export default class UserRepository implements IUserRepository {
     if (status === "not-assigned") {
       pipeline.push({
         $match: {
+          accountStatus: "approved",
           assignedCommittee: { $exists: true, $eq: null },
           assignedPosition: { $exists: true, $eq: null }
         }

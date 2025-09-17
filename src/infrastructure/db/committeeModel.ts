@@ -23,6 +23,7 @@ const committeeSchema = new mongoose.Schema<ICommitteeDocument>(
     title: {
       type: String,
       required: true,
+      unique: true,
     },
     type: {
       type: String,

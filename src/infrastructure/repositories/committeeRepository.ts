@@ -213,6 +213,7 @@ export default class CommitteeRepository implements ICommitteeRepository {
     return details[0];
   }
 
+
   // async getCommittee(parentLocation: string | null): Promise<ICommitteeDocument[]> {
 
   // }
