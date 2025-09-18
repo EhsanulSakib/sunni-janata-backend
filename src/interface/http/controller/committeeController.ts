@@ -83,7 +83,61 @@ export default class CommitteeController {
 
   updateCommittee = catchAsync(async (req: Request, res: Response) => {
     const id = req.params.id;
+
+    // Get old committee first (before update)
+    const previousCommittee = await this.Service.getCommitteeById(id);
+    if (!previousCommittee) {
+      return sendResponse(res, {
+        success: false,
+        statusCode: 404,
+        message: "Committee not found",
+        result: null
+      });
+    }
+
+    const previousPresident = previousCommittee.president;
+    const newPresident = req.body.president;
+
+    // Update the committee
     const committee = await this.Service.updateCommittee(id, req.body);
+    if (!committee) {
+      return sendResponse(res, {
+        success: false,
+        statusCode: 400,
+        message: "Failed to update committee",
+        result: null
+      });
+    }
+
+    // Handle president change
+    if (previousPresident?.toString() !== newPresident?.toString()) {
+      // Reset old president
+      if (previousPresident) {
+        await this.UserService.removeCommitteeDesignation(
+          previousPresident.toString()
+        );
+      }
+
+      // Assign new president
+      if (newPresident) {
+        const designation = await this.UserService.getDesignationByLevel(1);
+        if (!designation) {
+          return sendResponse(res, {
+            success: false,
+            statusCode: 400,
+            message: "Failed to assign committee designation",
+            result: null
+          });
+        }
+
+        await this.UserService.assignCommitteeDesignation(
+          newPresident.toString(),
+          designation._id as string,
+          committee._id as string
+        );
+      }
+    }
+
     sendResponse(res, {
       success: true,
       statusCode: 200,

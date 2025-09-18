@@ -8,7 +8,7 @@ import bcrypt from "bcrypt";
 import { uploadFileToCloudinary } from "../../shared/utils/cloudinary_file_operations";
 import {
   isVideoFile,
-  otpStatusCodeToMessage,
+  otpStatusCodeToMessage
 } from "../../shared/utils/helper_functions";
 import axios from "axios";
 import { ReturnDocument } from "mongodb";
@@ -40,6 +40,8 @@ export interface IUserService {
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }>;
 
   getDesignationByLevel(level: number): Promise<IDesignationDocument>;
+
+  removeCommitteeDesignation(userId: string): Promise<IUserDocument>;
 
   deleteUserById(id: string): Promise<IUserDocument>;
 
@@ -98,7 +100,7 @@ export default class UserService implements IUserService {
       const url = await uploadFileToCloudinary({
         file: avatar,
         folder: CloudinaryFolders.User,
-        isVideo: isVideoFile(avatar.originalname),
+        isVideo: isVideoFile(avatar.originalname)
       });
       data.avatar = url;
     }
@@ -112,7 +114,7 @@ export default class UserService implements IUserService {
     const otpNumber = Math.floor(100000 + Math.random() * 900000);
     const getUser = await this.UserRepository.getUserByPhone(phone);
     await this.UserRepository.updateUser(getUser?._id as string, {
-      otp: otpNumber,
+      otp: otpNumber
     });
 
     const message = `Your Sunni Janata Party OTP is ${otpNumber}`;
@@ -127,7 +129,7 @@ export default class UserService implements IUserService {
 
     if (otp == profile?.otp)
       await this.UserRepository.updateUser(profile._id as string, {
-        verifiedUser: true,
+        verifiedUser: true
       });
     else throw new AppError(StatusCodes.BAD_REQUEST, "wrong otp");
     return true;
@@ -139,7 +141,7 @@ export default class UserService implements IUserService {
   ): Promise<IUserDocument> {
     await UserPolicy.ensureUpdateProfile(this.UserRepository, id);
     return await this.UserRepository.updateUser(id, {
-      accountStatus: status,
+      accountStatus: status
     });
   }
 
@@ -149,6 +151,17 @@ export default class UserService implements IUserService {
   ): Promise<{ pagination: IPagination; users: IUserDocument[] }> {
     const result = await this.UserRepository.getUsersByStatus(status, query);
     return result;
+  }
+
+  async removeCommitteeDesignation(userId: string): Promise<IUserDocument> {
+    const user = await UserPolicy.ensureUserExistance(
+      this.UserRepository,
+      userId
+    );
+    return await this.UserRepository.updateUser(userId, {
+      assignedPosition: null,
+      assignedCommittee: null
+    });
   }
 
   async getDesignationByLevel(level: number): Promise<IDesignationDocument> {
@@ -184,7 +197,7 @@ export default class UserService implements IUserService {
       id: user?._id,
       phone: user?.phone,
       role: user?.role,
-      designation: user?.assignedPosition,
+      designation: user?.assignedPosition
     };
     const token = jwt.sign(payload, secret);
     return { result: user!, token };
@@ -208,7 +221,7 @@ export default class UserService implements IUserService {
       Number(process.env.SALT_ROUND || 15)
     );
     return await this.UserRepository.updateUser(id, {
-      password: hashedPassword,
+      password: hashedPassword
     });
   }
 
@@ -226,7 +239,7 @@ export default class UserService implements IUserService {
       Number(process.env.SALT_ROUND || 15)
     );
     return await this.UserRepository.updateUser(user?._id as string, {
-      password: hashedPassword,
+      password: hashedPassword
     });
   }
 
@@ -246,14 +259,13 @@ export default class UserService implements IUserService {
       userId
     );
 
-    
     const userDesignation = await this.DesignationRepository.getDesignationById(
       user.assignedPosition as string
     );
     const userCommittee = await this.CommitteeRepository.getCommitteeById(
       user.assignedCommittee as string
     );
-       
+
     if (userDesignation && userCommittee && userDesignation.level == 1)
       throw new AppError(
         StatusCodes.BAD_REQUEST,
@@ -269,7 +281,7 @@ export default class UserService implements IUserService {
     );
     return await this.UserRepository.updateUser(userId, {
       assignedPosition: designation,
-      assignedCommittee: committee,
+      assignedCommittee: committee
     });
   }
 }
