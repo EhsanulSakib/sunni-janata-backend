@@ -1,7 +1,7 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../shared/errors/app_errors";
 import { ApproveStatus, CloudinaryFolders } from "../../shared/utils/enums";
-import { IUser, IUserDocument } from "../db/userModel";
+import UserModel, { IUser, IUserDocument } from "../db/userModel";
 import { IUserRepository } from "../repositories/userRepository";
 import { UserPolicy } from "../policies/userPolicies";
 import bcrypt from "bcrypt";
@@ -158,59 +158,59 @@ export default class UserService implements IUserService {
     return result;
   }
 
-  async getAllUserByCommitteeId(committeeId: string): Promise<any[]> {
-    const users = await this.UserRepository.aggregate([
-      {
-        $match: {
-          assignedCommittee: new Types.ObjectId(committeeId)
-        }
+async getAllUserByCommitteeId(committeeId: string): Promise<any[]> {
+  const users = await UserModel.aggregate([
+    {
+      $match: {
+        assignedCommittee: committeeId, // match ObjectId
       },
-      {
-        $lookup: {
-          from: "designations", // collection name for designations
-          localField: "assignedPosition",
-          foreignField: "_id",
-          as: "designation"
-        }
+    },
+    {
+      $lookup: {
+        from: "designations", // collection name
+        localField: "assignedPosition",
+        foreignField: "_id",
+        as: "designation",
       },
-      {
-        $unwind: {
-          path: "$designation",
-          preserveNullAndEmptyArrays: true
-        }
+    },
+    {
+      $unwind: {
+        path: "$designation",
+        preserveNullAndEmptyArrays: true, // keep users without position
       },
-      {
-        $group: {
-          _id: "$assignedPosition",
-          groupName: { $first: "$designation.title" },
-          users: {
-            $push: {
-              _id: "$_id",
-              fullName: "$fullName",
-              email: "$email",
-              phone: "$phone",
-              avatar: "$avatar", // ✅ include avatar
-              assignedPosition: "$assignedPosition"
-            }
-          }
-        }
+    },
+    {
+      $group: {
+        _id: "$assignedPosition",
+        groupName: { $first: { $ifNull: ["$designation.title", "Unassigned"] } },
+        users: {
+          $push: {
+            _id: "$_id",
+            fullName: "$fullName",
+            email: "$email",
+            phone: "$phone",
+            avatar: "$avatar",
+            assignedPosition: "$assignedPosition",
+          },
+        },
       },
-      {
-        $project: {
-          _id: 0,
-          groupName: 1,
-          users: 1
-        }
+    },
+    {
+      $project: {
+        _id: 0,
+        groupName: 1,
+        users: 1,
       },
-      {
-        $sort: {
-          "users.fullName": 1 // optional: sort users alphabetically inside group
-        }
-      }
-    ]);
+    },
+    {
+      $sort: {
+        "users.fullName": 1, // optional: sort users alphabetically inside group
+      },
+    },
+  ]);
 
-    return users;
-  }
+  return users;
+}
 
   async removeCommitteeDesignation(userId: string): Promise<IUserDocument> {
     const user = await UserPolicy.ensureUserExistance(
