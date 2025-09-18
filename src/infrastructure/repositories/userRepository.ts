@@ -2,7 +2,7 @@ import { StatusCodes } from "http-status-codes";
 import AppError from "../../shared/errors/app_errors";
 import { IPagination, QueryBuilder } from "../../shared/utils/query_builder";
 import { IUser, IUserDocument, IUserModel } from "../db/userModel";
-import { UpdateResult } from "mongoose";
+import { PipelineStage, UpdateResult } from "mongoose";
 import { DatabaseNames } from "../../shared/utils/enums";
 
 export interface IUserRepository {
@@ -23,6 +23,8 @@ export interface IUserRepository {
     filter: Partial<IUser>,
     data: Partial<IUser>
   ): Promise<UpdateResult>;
+
+  aggregate(pipeline: PipelineStage[]): Promise<IUserDocument[]>;
 }
 
 export default class UserRepository implements IUserRepository {
@@ -34,6 +36,10 @@ export default class UserRepository implements IUserRepository {
   async createUser(data: IUser): Promise<IUserDocument> {
     const user = new this.Model(data);
     return await user.save();
+  }
+
+  async aggregate(pipeline: PipelineStage[]) {
+    return this.Model.aggregate(pipeline);
   }
 
   async getUserByEmail(email: string): Promise<IUserDocument | null> {

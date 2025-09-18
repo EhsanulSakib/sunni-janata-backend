@@ -21,7 +21,8 @@ import { ICommitteeRepository } from "../repositories/committeeRepository";
 import { LocationCommitteePolicty } from "../policies/locationCommitteePolicy";
 import { IDesignationRepository } from "../repositories/designationRepository";
 import DesignationPolicy from "../policies/designationPolicy";
-import { IDesignationDocument } from "../db/designationModel";
+import DesignationModel, { IDesignationDocument } from "../db/designationModel";
+import { Types } from "mongoose";
 
 export interface IUserService {
   requestRegistration(
@@ -41,7 +42,11 @@ export interface IUserService {
 
   getDesignationByLevel(level: number): Promise<IDesignationDocument>;
 
+  getAllUserByCommitteeId(committeeId: string): Promise<IUserDocument[]>;
+
   removeCommitteeDesignation(userId: string): Promise<IUserDocument>;
+
+  removeGeneralDesignation(userId: string): Promise<IUserDocument>;
 
   deleteUserById(id: string): Promise<IUserDocument>;
 
@@ -153,11 +158,92 @@ export default class UserService implements IUserService {
     return result;
   }
 
+  async getAllUserByCommitteeId(committeeId: string): Promise<any[]> {
+    const users = await this.UserRepository.aggregate([
+      {
+        $match: {
+          assignedCommittee: new Types.ObjectId(committeeId)
+        }
+      },
+      {
+        $lookup: {
+          from: "designations", // collection name for designations
+          localField: "assignedPosition",
+          foreignField: "_id",
+          as: "designation"
+        }
+      },
+      {
+        $unwind: {
+          path: "$designation",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $group: {
+          _id: "$assignedPosition",
+          groupName: { $first: "$designation.title" },
+          users: {
+            $push: {
+              _id: "$_id",
+              fullName: "$fullName",
+              email: "$email",
+              phone: "$phone",
+              avatar: "$avatar", // ✅ include avatar
+              assignedPosition: "$assignedPosition"
+            }
+          }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          groupName: 1,
+          users: 1
+        }
+      },
+      {
+        $sort: {
+          "users.fullName": 1 // optional: sort users alphabetically inside group
+        }
+      }
+    ]);
+
+    return users;
+  }
+
   async removeCommitteeDesignation(userId: string): Promise<IUserDocument> {
     const user = await UserPolicy.ensureUserExistance(
       this.UserRepository,
       userId
     );
+    return await this.UserRepository.updateUser(userId, {
+      assignedPosition: null,
+      assignedCommittee: null
+    });
+  }
+
+  async removeGeneralDesignation(userId: string): Promise<IUserDocument> {
+    const user = await UserPolicy.ensureUserExistance(
+      this.UserRepository,
+      userId
+    );
+
+    const presidentDesignation =
+      await this.DesignationRepository.getDesignationByLevel(1);
+    if (!presidentDesignation) {
+      throw new AppError(
+        StatusCodes.NOT_FOUND,
+        "President designation not found"
+      );
+    }
+
+    if (
+      user.assignedPosition?.toString() === presidentDesignation._id?.toString()
+    ) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "President can't be removed");
+    }
+
     return await this.UserRepository.updateUser(userId, {
       assignedPosition: null,
       assignedCommittee: null

@@ -155,20 +155,48 @@ export default class UserController {
     });
   });
 
+  getAllUserByCommitteeId = catchAsync(
+    async (req: Request, res: Response) => {
+      const { committeeId } = req.params;
+      const result = await this.Service.getAllUserByCommitteeId(committeeId);
+      sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: `Users fetched successfully`,
+        result: result
+      });
+    }
+  );
+
   assignCommitteeDesignation = catchAsync(
     async (req: Request, res: Response) => {
       const { userId } = req.params;
-      const { designation, committee } = req.body;
-      checkFieldsExistence({ designation, committee });
+      const { assignedPosition, assignedCommittee } = req.body;
+      checkFieldsExistence({ assignedPosition, assignedCommittee });
       const result = await this.Service.assignCommitteeDesignation(
         userId,
-        designation,
-        committee
+        assignedPosition,
+        assignedCommittee
       );
       sendResponse(res, {
         success: true,
         statusCode: StatusCodes.OK,
         message: `User assigned to committee and designation successfully`,
+        result: result
+      });
+    }
+  );
+
+  removeCommitteeDesignation = catchAsync(
+    async (req: Request, res: Response) => {
+      const { userId } = req.params;
+      const result = await this.Service.removeGeneralDesignation(
+        userId,
+      );
+      sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: `User removed from committee and designation successfully`,
         result: result
       });
     }
