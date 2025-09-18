@@ -223,7 +223,8 @@ export default class CommitteeRepository implements ICommitteeRepository {
                   _id: "$_id",
                   fullName: "$fullName",
                   avatar: "$avatar",
-                  email: "$email" // Add other fields you need
+                  email: "$email", // Add other fields you need
+                  phone: "$phone"
                 }
               }
             }
