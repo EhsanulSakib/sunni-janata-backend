@@ -6,8 +6,9 @@ import {
   ICommitteeModel
 } from "../db/committeeModel";
 import { IPagination, QueryBuilder } from "../../shared/utils/query_builder";
-import { Types } from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { DatabaseNames } from "../../shared/utils/enums";
+import UserModel from "../db/userModel";
 
 export interface ICommitteeRepository {
   create(committee: ICommittee): Promise<ICommitteeDocument>;
@@ -32,16 +33,70 @@ export default class CommitteeRepository implements ICommitteeRepository {
   }
 
   async create(committee: ICommittee): Promise<ICommitteeDocument> {
+    const existingCommittee = await this.Model.findOne({
+      location: committee.location,
+      type: committee.type
+    });
+
+    if (existingCommittee) {
+      throw new AppError(StatusCodes.BAD_REQUEST, "Committee already exists");
+    }
+
+    const isCentralCommittee = committee.type === "central";
+
+    if (isCentralCommittee) {
+      const centralCommittee = await this.Model.findOne({ type: "central" });
+      if (centralCommittee) {
+        throw new AppError(
+          StatusCodes.BAD_REQUEST,
+          "Central Committee already exists"
+        );
+      }
+    }
+
     const newCommittee = new this.Model(committee);
     return (await newCommittee.save()).populate("location president");
   }
 
   async delete(id: string): Promise<ICommitteeDocument> {
-    const deletedCommittee = await this.Model.findByIdAndDelete(id);
-    if (!deletedCommittee) {
-      throw new AppError(StatusCodes.NOT_FOUND, "Committee not found");
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      // 1. Find committee
+      const committee = await this.Model.findById(id).session(session);
+      if (!committee) {
+        throw new AppError(StatusCodes.NOT_FOUND, "Committee not found");
+      }
+
+      // 2. Concurrent tasks:
+      //    a) Delete committee
+      //    b) Update users who belong to this committee
+      const [deletedCommittee] = await Promise.all([
+        this.Model.findByIdAndDelete(id, { session }),
+        UserModel.updateMany(
+          { assignedCommittee: id },
+          { $set: { assignedCommittee: null, assignedPosition: null } },
+          { session }
+        )
+      ]);
+
+      if (!deletedCommittee) {
+        throw new AppError(
+          StatusCodes.INTERNAL_SERVER_ERROR,
+          "Failed to delete committee"
+        );
+      }
+
+      // 3. Commit transaction
+      await session.commitTransaction();
+      return deletedCommittee;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-    return deletedCommittee;
   }
 
   async getCommitteeById(id: string): Promise<ICommitteeDocument | null> {

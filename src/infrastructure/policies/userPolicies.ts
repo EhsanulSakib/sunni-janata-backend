@@ -3,6 +3,7 @@ import { IUser, IUserDocument } from "../db/userModel";
 import { IUserRepository } from "../repositories/userRepository";
 import AppError from "../../shared/errors/app_errors";
 import { ApproveStatus } from "../../shared/utils/enums";
+import { ClientSession } from "mongoose";
 
 export class UserPolicy {
   static async ensureUserCanRegister(
@@ -43,12 +44,12 @@ export class UserPolicy {
     if (!existingUser?.verifiedUser)
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        `account with _id -> ${id} is not verified`
+        `This account is not verified`
       );
     if (!existingUser)
       throw new AppError(
         StatusCodes.BAD_REQUEST,
-        `account with _id -> ${id} does not exists`
+        `This account does not exists`
       );
   }
 
@@ -75,9 +76,10 @@ export class UserPolicy {
 
   static async ensureUserExistance(
     UserRepository: IUserRepository,
-    id: string
+    id: string,
+    session?: ClientSession
   ): Promise<IUserDocument> {
-    const user = await UserRepository.getUserById(id);
+    const user = await UserRepository.getUserById(id, session);
     if (!user) throw new AppError(StatusCodes.NOT_FOUND, "User not found");
     return user;
   }

@@ -187,6 +187,24 @@ export default class UserController {
     }
   );
 
+  updateCommitteePresident = catchAsync(
+    async (req: Request, res: Response) => {
+      const { committeeId } = req.params;
+      const { currentUserId, prevUserId } = req.body;
+      const result = await this.Service.updateCommitteePresident(
+        committeeId,
+        currentUserId,
+        prevUserId
+      );
+      sendResponse(res, {
+        success: true,
+        statusCode: StatusCodes.OK,
+        message: `User assigned to committee and designation successfully`,
+        result: result
+      });
+    }
+  );
+
   removeCommitteeDesignation = catchAsync(
     async (req: Request, res: Response) => {
       const { userId } = req.params;

@@ -33,7 +33,7 @@ const committeeSchema = new mongoose.Schema<ICommitteeDocument>(
     location: {
       type: mongoose.Schema.Types.ObjectId,
       ref: DatabaseNames.Location,
-      required: true,
+      default: null,
     },
     parentLocation: {
       type: mongoose.Schema.Types.ObjectId,

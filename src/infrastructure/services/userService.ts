@@ -23,6 +23,7 @@ import { IDesignationRepository } from "../repositories/designationRepository";
 import DesignationPolicy from "../policies/designationPolicy";
 import DesignationModel, { IDesignationDocument } from "../db/designationModel";
 import { Types } from "mongoose";
+import { ClientSession } from "mongoose";
 
 export interface IUserService {
   requestRegistration(
@@ -49,6 +50,12 @@ export interface IUserService {
   removeGeneralDesignation(userId: string): Promise<IUserDocument>;
 
   deleteUserById(id: string): Promise<IUserDocument>;
+
+  updateCommitteePresident(
+    committeeId: string,
+    currentUserId: string,
+    prevUserId: string
+  ): Promise<IUserDocument>;
 
   userLogin(
     phone: string,
@@ -158,59 +165,61 @@ export default class UserService implements IUserService {
     return result;
   }
 
-async getAllUserByCommitteeId(committeeId: string): Promise<any[]> {
-  const users = await UserModel.aggregate([
-    {
-      $match: {
-        assignedCommittee: committeeId, // match ObjectId
+  async getAllUserByCommitteeId(committeeId: string): Promise<any[]> {
+    const users = await UserModel.aggregate([
+      {
+        $match: {
+          assignedCommittee: committeeId // match ObjectId
+        }
       },
-    },
-    {
-      $lookup: {
-        from: "designations", // collection name
-        localField: "assignedPosition",
-        foreignField: "_id",
-        as: "designation",
+      {
+        $lookup: {
+          from: "designations", // collection name
+          localField: "assignedPosition",
+          foreignField: "_id",
+          as: "designation"
+        }
       },
-    },
-    {
-      $unwind: {
-        path: "$designation",
-        preserveNullAndEmptyArrays: true, // keep users without position
+      {
+        $unwind: {
+          path: "$designation",
+          preserveNullAndEmptyArrays: true // keep users without position
+        }
       },
-    },
-    {
-      $group: {
-        _id: "$assignedPosition",
-        groupName: { $first: { $ifNull: ["$designation.title", "Unassigned"] } },
-        users: {
-          $push: {
-            _id: "$_id",
-            fullName: "$fullName",
-            email: "$email",
-            phone: "$phone",
-            avatar: "$avatar",
-            assignedPosition: "$assignedPosition",
+      {
+        $group: {
+          _id: "$assignedPosition",
+          groupName: {
+            $first: { $ifNull: ["$designation.title", "Unassigned"] }
           },
-        },
+          users: {
+            $push: {
+              _id: "$_id",
+              fullName: "$fullName",
+              email: "$email",
+              phone: "$phone",
+              avatar: "$avatar",
+              assignedPosition: "$assignedPosition"
+            }
+          }
+        }
       },
-    },
-    {
-      $project: {
-        _id: 0,
-        groupName: 1,
-        users: 1,
+      {
+        $project: {
+          _id: 0,
+          groupName: 1,
+          users: 1
+        }
       },
-    },
-    {
-      $sort: {
-        "users.fullName": 1, // optional: sort users alphabetically inside group
-      },
-    },
-  ]);
+      {
+        $sort: {
+          "users.fullName": 1 // optional: sort users alphabetically inside group
+        }
+      }
+    ]);
 
-  return users;
-}
+    return users;
+  }
 
   async removeCommitteeDesignation(userId: string): Promise<IUserDocument> {
     const user = await UserPolicy.ensureUserExistance(
@@ -258,6 +267,88 @@ async getAllUserByCommitteeId(committeeId: string): Promise<any[]> {
     if (!designation)
       throw new AppError(StatusCodes.NOT_FOUND, "Designation not found");
     return designation;
+  }
+  async updateCommitteePresident(
+    committeeId: string,
+    currentUserId: string,
+    prevUserId: string
+  ): Promise<IUserDocument> {
+    // Initialize session as undefined
+    let session: ClientSession | undefined = undefined;
+
+    try {
+      // Start session
+      session = await this.UserRepository.startSession();
+
+      const updatedCurrentUser = await session.withTransaction(async () => {
+        // Ensure session is defined (TypeScript guard)
+        if (!session) {
+          throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "Failed to start database session"
+          );
+        }
+
+        // 1. Ensure users exist (within transaction)
+        const [currentUser, prevUser] = await Promise.all([
+          UserPolicy.ensureUserExistance(
+            this.UserRepository,
+            currentUserId,
+            session
+          ),
+          UserPolicy.ensureUserExistance(
+            this.UserRepository,
+            prevUserId,
+            session
+          )
+        ]);
+
+        // 2. Concurrent tasks within transaction:
+        //    a) Update previous user's committee and position to null
+        //    b) Update current user's committee and position
+        const [updatedPrevUser, updatedCurrentUser] = await Promise.all([
+          this.UserRepository.updateUser(
+            prevUserId,
+            { assignedCommittee: null, assignedPosition: null },
+            { session }
+          ),
+          this.UserRepository.updateUser(
+            currentUserId,
+            {
+              assignedCommittee: committeeId,
+              assignedPosition: prevUser.assignedPosition
+            },
+            { session }
+          )
+        ]);
+
+        if (!updatedPrevUser || !updatedCurrentUser) {
+          throw new AppError(
+            StatusCodes.INTERNAL_SERVER_ERROR,
+            "Failed to update one or both users"
+          );
+        }
+
+        return updatedCurrentUser;
+      });
+
+      return updatedCurrentUser;
+    } catch (error) {
+      // withTransaction handles abort internally on error
+      console.error("Transaction failed:", error); // Optional logging for debugging
+      if (error instanceof AppError) {
+        throw error;
+      }
+      throw new AppError(
+        StatusCodes.INTERNAL_SERVER_ERROR,
+        `Failed to update committee president: ${error}`
+      );
+    } finally {
+      // End session if it was created
+      if (session) {
+        await session.endSession();
+      }
+    }
   }
 
   async deleteUserById(id: string): Promise<IUserDocument> {

@@ -55,6 +55,9 @@ router.route("/profile/:id").get(authenticate(), controller.getProfileWithId);
 router.route("/assign-committee-designation/:userId").put(authenticate([UserRoles.Admin]), controller.assignCommitteeDesignation);
 router.route("/remove-committee-designation/:userId").post(authenticate([UserRoles.Admin]), controller.removeCommitteeDesignation);
 
+
+router.route("/update-committee-president/:committeeId").put(authenticate([UserRoles.Admin]), controller.updateCommitteePresident);
+
 router.route("/get-users-by-committee/:userId").get(controller.getAllUserByCommitteeId);
 
 export default router;

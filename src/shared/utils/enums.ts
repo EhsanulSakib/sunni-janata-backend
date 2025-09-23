@@ -26,8 +26,8 @@ export enum ApproveStatus {
 export enum CommitteeType {
   Student = "student",
   Youth = "youth",
-  Females = "females",
-  Central = 'central'
+  Female = "female",
+  Central = 'central',
 }
 
 

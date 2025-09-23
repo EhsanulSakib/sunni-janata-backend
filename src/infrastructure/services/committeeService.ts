@@ -46,6 +46,7 @@ export class CommitteeService implements ICommitteeService {
   }
 
   async deleteCommittee(id: string): Promise<ICommitteeDocument | null> {
+    
     const deletedCommittee = await this.CommitteeRepository.delete(id);
 
     if(!deletedCommittee) throw new AppError(StatusCodes.NOT_FOUND, "Committee not found")

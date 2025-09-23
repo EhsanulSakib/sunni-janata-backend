@@ -26,7 +26,7 @@ export function validateEditLocation(body: Record<string, any>) {
 
 export function validateCreateCommittee(body: Record<string, any>) {
   const {title, type, location, parentLocation, president, description, address} = body;
-  if(!title || !type || !location  || !president) throw new AppError(StatusCodes.BAD_REQUEST, "All fields are required");
+  if(!title || !type  || !president) throw new AppError(StatusCodes.BAD_REQUEST, "All fields are required");
   if(!Object.values(CommitteeType).includes(type)) throw new AppError(StatusCodes.BAD_REQUEST, `type ${type} is not valid Type`);
 }
 

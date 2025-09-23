@@ -2,15 +2,22 @@ import { StatusCodes } from "http-status-codes";
 import AppError from "../../shared/errors/app_errors";
 import { IPagination, QueryBuilder } from "../../shared/utils/query_builder";
 import { IUser, IUserDocument, IUserModel } from "../db/userModel";
-import { PipelineStage, UpdateResult } from "mongoose";
+import { PipelineStage, UpdateResult, ClientSession } from "mongoose";
 import { DatabaseNames } from "../../shared/utils/enums";
 
 export interface IUserRepository {
   createUser(data: IUser): Promise<IUserDocument>;
   getUserByEmail(email: string): Promise<IUserDocument | null>;
   getUserByPhone(phone: string): Promise<IUserDocument | null>;
-  getUserById(id: string): Promise<IUserDocument | null>;
-  updateUser(id: string, data: Partial<IUser>): Promise<IUserDocument>;
+  getUserById(id: string, session?: ClientSession): Promise<IUserDocument | null>;
+  findOneByCommitteeAndPosition({
+    assignedCommittee,
+    assignedPosition
+  }: {
+    assignedCommittee: string;
+    assignedPosition: string;
+  }): Promise<IUserDocument | null>;
+  updateUser(id: string, data: Partial<IUser>, options?: { session: ClientSession }): Promise<IUserDocument>;
   deleteUser(id: string): Promise<IUserDocument>;
   getAllUsers(
     query: Record<string, unknown>
@@ -23,14 +30,18 @@ export interface IUserRepository {
     filter: Partial<IUser>,
     data: Partial<IUser>
   ): Promise<UpdateResult>;
-
   aggregate(pipeline: PipelineStage[]): Promise<IUserDocument[]>;
+  startSession(): Promise<ClientSession>;
 }
 
 export default class UserRepository implements IUserRepository {
   Model: IUserModel;
   constructor(model: IUserModel) {
     this.Model = model;
+  }
+
+  async startSession(): Promise<ClientSession> {
+    return await this.Model.db.startSession();
   }
 
   async createUser(data: IUser): Promise<IUserDocument> {
@@ -43,19 +54,32 @@ export default class UserRepository implements IUserRepository {
   }
 
   async getUserByEmail(email: string): Promise<IUserDocument | null> {
-    return await this.Model.findOne({ email });
+    return await this.Model.findOne({ email }).session(null);
+  }
+
+  async findOneByCommitteeAndPosition({
+    assignedCommittee,
+    assignedPosition
+  }: {
+    assignedCommittee: string;
+    assignedPosition: string;
+  }): Promise<IUserDocument | null> {
+    return await this.Model.findOne({
+      assignedCommittee,
+      assignedPosition
+    }).session(null);
   }
 
   async getUserByPhone(phone: string): Promise<IUserDocument | null> {
-    return await this.Model.findOne({ phone });
+    return await this.Model.findOne({ phone }).session(null);
   }
 
-  async getUserById(id: string): Promise<IUserDocument | null> {
-    return await this.Model.findById(id);
+  async getUserById(id: string, session?: ClientSession): Promise<IUserDocument | null> {
+    return await this.Model.findById(id).session(session || null);
   }
 
-  async updateUser(id: string, data: Partial<IUser>): Promise<IUserDocument> {
-    const updated = await this.Model.findByIdAndUpdate(id, data, { new: true })
+  async updateUser(id: string, data: Partial<IUser>, options?: { session: ClientSession }): Promise<IUserDocument> {
+    const updated = await this.Model.findByIdAndUpdate(id, data, { new: true, session: options?.session })
       .select("-password -otp")
       .populate("assignedCommittee", "title")
       .populate("assignedPosition", "title");
@@ -153,7 +177,7 @@ export default class UserRepository implements IUserRepository {
 
     // Use QueryBuilder in aggregate mode
     const qb = new QueryBuilder<IUserDocument>(this.Model, query)
-      .aggregate(pipeline) // start with pipeline
+      .aggregate(pipeline)
       .sort()
       .paginate();
 

@@ -42,7 +42,7 @@ router
   .put(authenticate([UserRoles.Admin]), controller.updateCommittee);
 
 router
-  .route("/:id")
+  .route("/delete/:id")
   .delete(authenticate([UserRoles.Admin]), controller.deleteCommittee);
 
 export default router;
