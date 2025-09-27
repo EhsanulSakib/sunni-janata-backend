@@ -1,6 +1,6 @@
 import { StatusCodes } from "http-status-codes";
 import AppError from "../../shared/errors/app_errors";
-import { ApproveStatus, CloudinaryFolders } from "../../shared/utils/enums";
+import { ApproveStatus, CloudinaryFolders, DatabaseNames } from "../../shared/utils/enums";
 import UserModel, { IUser, IUserDocument } from "../db/userModel";
 import { IUserRepository } from "../repositories/userRepository";
 import { UserPolicy } from "../policies/userPolicies";
@@ -22,8 +22,7 @@ import { LocationCommitteePolicty } from "../policies/locationCommitteePolicy";
 import { IDesignationRepository } from "../repositories/designationRepository";
 import DesignationPolicy from "../policies/designationPolicy";
 import DesignationModel, { IDesignationDocument } from "../db/designationModel";
-import { Types } from "mongoose";
-import { ClientSession } from "mongoose";
+import { PipelineStage, Types, ClientSession } from "mongoose";
 
 export interface IUserService {
   requestRegistration(
@@ -421,9 +420,53 @@ export default class UserService implements IUserService {
   }
 
   async getProfile(id: string): Promise<IUserDocument> {
-    const user = await this.UserRepository.getUserById(id);
-    if (!user) throw new AppError(StatusCodes.NOT_FOUND, "user not found");
-    return user;
+    const pipeline: PipelineStage[] = [
+      {
+        $match: {
+          _id: new Types.ObjectId(id)
+        }
+      },
+      {
+        $lookup: {
+          from: DatabaseNames.Committee,
+          localField: "assignedCommittee",
+          foreignField: "_id",
+          as: "assignedCommittee"
+        }
+      },
+      {
+        $lookup: {
+          from: DatabaseNames.Designation,
+          localField: "assignedPosition",
+          foreignField: "_id",
+          as: "assignedPosition"
+        }
+      },
+      {
+        $unwind: {
+          path: "$assignedCommittee",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $unwind: {
+          path: "$assignedPosition",
+          preserveNullAndEmptyArrays: true
+        }
+      },
+      {
+        $project: {
+          password: 0,
+          otp: 0
+        }
+      }
+    ];
+
+    const users = await this.UserRepository.aggregate(pipeline);
+
+    if (!users || users.length === 0) throw new AppError(StatusCodes.NOT_FOUND, "user not found");
+
+    return users[0];
   }
 
   async assignCommitteeDesignation(

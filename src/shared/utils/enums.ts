@@ -6,6 +6,7 @@ export enum DatabaseNames {
   Committee = "committees",
   Designation = "designations",
   President = "presidents",
+  Constitution = "constitution",
 }
 
 export enum LocationLevels {
@@ -38,4 +39,6 @@ export enum UserRoles {
 
 export enum CloudinaryFolders{
   User = 'users',
+  President = 'presidents',
+  Constitution = 'constitution'
 }

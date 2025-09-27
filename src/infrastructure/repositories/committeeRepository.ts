@@ -16,6 +16,8 @@ export interface ICommitteeRepository {
     query: Record<string, unknown>
   ): Promise<{ pagination: IPagination; committees: ICommitteeDocument[] }>;
   getCommitteeById(id: string): Promise<ICommitteeDocument | null>;
+  
+  getCommitteeByRole(role: string): Promise<ICommitteeDocument>;
   getCommitteeDetails(id: string): Promise<ICommitteeDocument>;
   //   getById(id: string): Promise<ICommitteeDocument>;)
   update(
@@ -220,6 +222,13 @@ export default class CommitteeRepository implements ICommitteeRepository {
     const pagination = await res.countTotal();
 
     return { committees, pagination };
+  }
+
+  async getCommitteeByRole(role: string) {
+    const committee = await this.Model.findOne({ type: role });
+    if (!committee)
+      throw new AppError(StatusCodes.NOT_FOUND, "Committee not found");
+    return committee;
   }
 
   async getCommitteeDetails(id: string): Promise<ICommitteeDocument> {

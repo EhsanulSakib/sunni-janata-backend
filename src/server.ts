@@ -22,6 +22,8 @@ import ContactMessageRouter from "./interface/http/routes/contactRoutes";
 import CommitteeLocationRouter from "./interface/http/routes/committeeLocationRoutes";
 import PresidentRouter from "./interface/http/routes/presidentRoutes";
 import CommitteeRouter from "./interface/http/routes/committeeRoutes";
+import NotificationRouter from "./interface/http/routes/notificationRoutes";
+import ConstitutionRouter from "./interface/http/routes/constitutionRoutes";
 
 
 
@@ -74,6 +76,8 @@ app.use("/api/v1/committee-location", CommitteeLocationRouter);
 app.use("/api/v1/committee", CommitteeRouter);
 app.use("/api/v1/page-access", PresidentRouter);
 app.use("/api/v1/location", CommitteeLocationRouter);
+app.use("/api/v1/notifications", NotificationRouter);
+app.use("/api/v1/constitution", ConstitutionRouter);
 
 
 // app.all("*", (req, res, next) => {

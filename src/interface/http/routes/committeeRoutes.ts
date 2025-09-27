@@ -37,6 +37,8 @@ router
 
 router.route("/:id").get(controller.getCommitteeById);
 
+router.route("/get-committee-by-role/:role").get(controller.getCommitteeByRole);
+
 router
   .route("/update/:id")
   .put(authenticate([UserRoles.Admin]), controller.updateCommittee);

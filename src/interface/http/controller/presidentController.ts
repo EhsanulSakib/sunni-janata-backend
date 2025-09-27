@@ -18,21 +18,25 @@ export default class PresidentController {
       success: true,
       statusCode: StatusCodes.OK,
       message: "President quote found successfully",
-      result: quote
+      result: quote,
     });
   });
 
   updatePresidentQuote = catchAsync(async (req: Request, res: Response) => {
-    const id = req.query.id as string;
-    const quote = await this.Service.updatePresidentQuote(
-      id,
-      req.body
-    );
+    const id = req.params.id as string;
+    const quote: IPresident = {
+      name: req.body.name,
+      quote: req.body.quote,
+      details: req.body.details,
+      designation: req.body.designation,
+      image: req.body.image || undefined, // Image URL will be set by service if file is uploaded
+    };
+    const updatedQuote = await this.Service.updatePresidentQuote(id, quote, req.file);
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,
       message: "President quote updated successfully",
-      result: quote
+      result: updatedQuote,
     });
   });
 }

@@ -36,6 +36,17 @@ export default class CommitteeController {
     });
   });
 
+  getCommitteeByRole = catchAsync(async (req: Request, res: Response) => {
+    const role = req.params.role;
+    const committee = await this.Service.getCommitteeByRole(role);
+    sendResponse(res, {
+      success: true,
+      statusCode: 200,
+      message: "Committee retrieved successfully",
+      result: committee
+    });
+  });
+
   createCommittee = catchAsync(async (req: Request, res: Response) => {
     console.log("POST /committee request body:", req.body); // Log request body
     validateCreateCommittee(req.body);

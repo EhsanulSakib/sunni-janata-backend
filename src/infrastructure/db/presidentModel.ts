@@ -2,7 +2,7 @@ import mongoose, { Document, Schema } from "mongoose";
 import { DatabaseNames } from "../../shared/utils/enums";
 
 export interface IPresident {
-  image: string;
+  image: string | undefined;
   quote: string;
   name: string;
   details: string;

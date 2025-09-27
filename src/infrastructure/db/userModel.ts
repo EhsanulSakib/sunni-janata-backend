@@ -6,6 +6,7 @@ import {
 } from "../../shared/utils/enums";
 
 export interface IUser {
+  user_id?: string;
   fullName: string;
   email?: string;
   phone: string;
@@ -35,8 +36,19 @@ export interface IUserDocument extends IUser, mongoose.Document {
 
 export interface IUserModel extends mongoose.Model<IUserDocument> {}
 
+// Function to generate a 6-digit user_id synchronously
+const generateUserId = (): string => {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+};
+
 const userSchema = new mongoose.Schema<IUserDocument>(
   {
+    user_id: { 
+      type: String, 
+      required: true, 
+      unique: true,
+      default: generateUserId
+    },
     fullName: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true, unique: true },

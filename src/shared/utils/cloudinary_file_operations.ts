@@ -7,20 +7,23 @@ export const uploadFileToCloudinary = ({
   isVideo,
   folder,
   file,
+  resource_type,
+  publicId, // Added to allow custom publicId
 }: {
   isVideo: boolean;
   folder: string;
   file: Express.Multer.File;
+  resource_type?: "image" | "video" | "raw" | "auto" | undefined;
+  publicId?: string; // Optional custom publicId
 }) => {
-  const fileHash = generateFileHash(file.buffer);
-  const publicId = `${fileHash}`;
+  const defaultPublicId = generateFileHash(file.buffer);
   return new Promise<string>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
       {
-        public_id: publicId, // Ensures hash is used
+        public_id: publicId || defaultPublicId, // Use custom publicId if provided
         folder: folder,
-        resource_type: isVideo ? "video" : "image",
-        overwrite: false, // Don't overwrite if already exists
+        resource_type: resource_type || (isVideo ? "video" : "image"),
+        overwrite: true, // Overwrite to avoid multiple versions
       },
       (error, result) => {
         if (error || !result) return reject(error);

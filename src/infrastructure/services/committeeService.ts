@@ -12,6 +12,7 @@ import { DeleteResult } from "mongoose";
 export interface ICommitteeService {
   getCommittee(query: Record<string, unknown>): Promise<{pagination: IPagination; committees: ICommittee[]}>;
   getCommitteeById(id: string): Promise<ICommittee>;
+  getCommitteeByRole(role: string): Promise<ICommittee>;
   createCommittee(committee: ICommittee): Promise<any>;
   updateCommittee(id: string, committee: Partial<ICommittee>): Promise<ICommitteeDocument | null>;
   deleteCommittee(id: string): Promise<ICommitteeDocument | null>;
@@ -30,6 +31,12 @@ export class CommitteeService implements ICommitteeService {
 
   async getCommitteeById(id: string): Promise<ICommitteeDocument> {
     const committee = await this.CommitteeRepository.getCommitteeById(id);
+    if(!committee) throw new AppError(StatusCodes.NOT_FOUND, "Committee not found")
+    return committee;
+  }
+  
+  async getCommitteeByRole(role: string): Promise<ICommitteeDocument> {
+    const committee = await this.CommitteeRepository.getCommitteeByRole(role);
     if(!committee) throw new AppError(StatusCodes.NOT_FOUND, "Committee not found")
     return committee;
   }
