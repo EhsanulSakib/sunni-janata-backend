@@ -5,30 +5,40 @@ import { ApproveStatus } from "../../../shared/utils/enums";
 export function validateAccountRequest(body: Record<string, any>) {
   const {
     fullName,
+    email,
     phone,
     password,
     dob,
     division,
     district,
     upazila,
+    thana,
     union,
     ward,
     requestedPosition,
     inspiration,
+    permanentAddress,
+    idType,
+    nid
   } = body;
 
   if (
     !fullName ||
+    !email ||
     !phone ||
     !password ||
     !dob ||
     !division ||
     !district ||
     !upazila ||
+    !thana ||
     !union ||
     !ward ||
     !requestedPosition ||
-    !inspiration
+    !inspiration ||
+    !permanentAddress ||
+    !idType ||
+    !nid
   )
     throw new AppError(StatusCodes.BAD_REQUEST, "All fields are required");
 }

@@ -27,7 +27,8 @@ import { PipelineStage, Types, ClientSession } from "mongoose";
 export interface IUserService {
   requestRegistration(
     data: IUser,
-    avatar?: Express.Multer.File
+    avatar?: Express.Multer.File,
+    declaration?: Express.Multer.File
   ): Promise<IUserDocument>;
   requestOTP(phone: string): Promise<{ message: string }>;
   verifyOTP(phone: string, otp: number): Promise<boolean>;
@@ -98,7 +99,8 @@ export default class UserService implements IUserService {
 
   async requestRegistration(
     data: IUser,
-    avatar?: Express.Multer.File
+    avatar?: Express.Multer.File,
+    declaration?: Express.Multer.File
   ): Promise<IUserDocument> {
     // validating
     await UserPolicy.ensureUserCanRegister(this.UserRepository, data);
@@ -111,9 +113,19 @@ export default class UserService implements IUserService {
       const url = await uploadFileToCloudinary({
         file: avatar,
         folder: CloudinaryFolders.User,
-        isVideo: isVideoFile(avatar.originalname)
+        isVideo: isVideoFile(avatar.originalname),
+        resource_type: "image"
       });
       data.avatar = url;
+    }
+    if (declaration) {
+      const pdfUrl = await uploadFileToCloudinary({
+        file: declaration,
+        folder: `${CloudinaryFolders.User}/declarations`,
+        isVideo: false,
+        resource_type: "raw"
+      });
+      data.declaration = pdfUrl;
     }
     data.password = hashedPassword;
     const newUser = await this.UserRepository.createUser(data);

@@ -21,7 +21,10 @@ export default class UserController {
 
   requestRegistration = catchAsync(async (req: Request, res: Response) => {
     validateAccountRequest(req.body);
-    const result = await this.Service.requestRegistration(req.body, req.file);
+    const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+    const avatar = files?.avatar?.[0];
+    const declaration = files?.declaration?.[0];
+    const result = await this.Service.requestRegistration(req.body, avatar, declaration);
     sendResponse(res, {
       success: true,
       statusCode: StatusCodes.OK,

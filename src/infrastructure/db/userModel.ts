@@ -8,7 +8,7 @@ import {
 export interface IUser {
   user_id?: string;
   fullName: string;
-  email?: string;
+  email: string;
   phone: string;
   avatar?: string;
   password: string;
@@ -23,6 +23,10 @@ export interface IUser {
   assignedPosition: mongoose.Schema.Types.ObjectId | string | null;
   assignedCommittee: mongoose.Schema.Types.ObjectId | string | null;
   inspiration: string;
+  permanentAddress: string;
+  idType: string;
+  nid: string;
+  declaration?: string;
   role: string;
   accountStatus?: ApproveStatus;
   verifiedUser?: boolean;
@@ -72,8 +76,12 @@ const userSchema = new mongoose.Schema<IUserDocument>(
       ref: DatabaseNames.Committee,
       default: null,
     },
-    role: { type: String, enum: UserRoles, default: UserRoles.User },
     inspiration: { type: String, required: true },
+    permanentAddress: { type: String, required: true },
+    idType: { type: String, required: true },
+    nid: { type: String, required: true },
+    declaration: { type: String },
+    role: { type: String, enum: UserRoles, default: UserRoles.User },
     accountStatus: { type: String, default: ApproveStatus.Pending },
     verifiedUser: { type: Boolean, default: false },
     otp: { type: Number },

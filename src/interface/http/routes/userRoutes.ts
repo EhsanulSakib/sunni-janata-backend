@@ -1,4 +1,4 @@
-import expreee from "express";
+import express from "express";
 import UserRepository from "../../../infrastructure/repositories/userRepository";
 import UserModel from "../../../infrastructure/db/userModel";
 import UserService from "../../../infrastructure/services/userService";
@@ -13,7 +13,7 @@ import CommitteeModel from "../../../infrastructure/db/committeeModel";
 import DesignationRepository from "../../../infrastructure/repositories/designationRepository";
 import DesignationModel from "../../../infrastructure/db/designationModel";
 
-const router = expreee.Router();
+const router = express.Router();
 
 const userRepository = new UserRepository(UserModel);
 const location = new LocationRepository(LocationModel);
@@ -25,7 +25,7 @@ const controller = new UserController(service);
 // used to register a form
 router
   .route("/register-req")
-  .post(upload.single("avatar"), controller.requestRegistration);
+  .post(upload.fields([{ name: "avatar", maxCount: 1 }, { name: "declaration", maxCount: 1 }]), controller.requestRegistration);
 // // verify the otp after registration
 router.route("/request-otp").post(controller.requestOtp);
 
